@@ -5,73 +5,114 @@ export interface Position {
   y: number
 }
 
+export type Cell = 'empty' | 'wall' | 'goal'
+export type Direction = 'up' | 'down' | 'left' | 'right'
+
+export type GameEvent =
+  | { type: 'move'; position: Position; commandIndex: number }
+  | { type: 'turn'; direction: Direction; commandIndex: number }
+  | { type: 'fail'; commandIndex: number }
+  | { type: 'win'; commandIndex: number }
+
 export interface GameState {
   player: Position
   goal: Position
   grid: Cell[][]
-  status: 'idle' | 'running' | 'win' | 'fail'
-  steps: Position[] // история шагов для анимации
+  status: 'idle' | 'win' | 'fail'
+  steps: Position[]
+  direction: Direction
 }
 
-export type Cell = 'empty' | 'wall' | 'goal'
-
-// Выполняет команды и возвращает список позиций (каждый шаг)
-export function runCommands(state: GameState, commands: Command[]): GameState {
-  let player = { ...state.player }
-  const steps: Position[] = [{ ...player }]
+export function runCommands(state: GameState, commands: Command[]): {
+  events: GameEvent[]
+  finalState: GameState
+} {
+  const player = { ...state.player }
+  const dirState = { direction: state.direction ?? 'right' as Direction }
+  const events: GameEvent[] = []
 
   try {
-    executeCommands(commands, player, state.grid, steps)
-    player = steps[steps.length - 1]
-  } catch (e) {
-    return { ...state, status: 'fail', steps }
+    executeCommands(commands, player, state.grid, dirState, events, { index: 0 })
+  } catch (e: unknown) {
+    const err = e as { commandIndex: number }
+    const finalState: GameState = {
+      ...state,
+      player,
+      steps: events.filter(e => e.type === 'move').map(e => (e as { position: Position }).position),
+      status: 'fail',
+      direction: dirState.direction,
+    }
+    return { events, finalState }
   }
 
-  const lastPos = steps[steps.length - 1]
-  const won = lastPos.x === state.goal.x && lastPos.y === state.goal.y
+  const won = player.x === state.goal.x && player.y === state.goal.y
+  events.push({ type: won ? 'win' : 'fail', commandIndex: -1 })
 
-  return {
+  const finalState: GameState = {
     ...state,
     player,
-    steps,
+    steps: events.filter(e => e.type === 'move').map(e => (e as { position: Position }).position),
     status: won ? 'win' : 'fail',
+    direction: dirState.direction,
   }
+
+  return { events, finalState }
 }
 
 function executeCommands(
   commands: Command[],
   player: Position,
   grid: Cell[][],
-  steps: Position[]
+  dirState: { direction: Direction },
+  events: GameEvent[],
+  counter: { index: number }
 ): void {
   for (const cmd of commands) {
+    const cmdIndex = counter.index++
+
+    if (cmd.type === 'direction') {
+      dirState.direction = cmd.direction
+      events.push({ type: 'turn', direction: cmd.direction, commandIndex: cmdIndex })
+    }
+
     if (cmd.type === 'move') {
-      const next = move(player, cmd.direction)
-
+      const next = moveOne(player, dirState.direction)
       if (!isValid(next, grid)) {
-        throw new Error('Врезался в стену или вышел за границу!')
+        events.push({ type: 'fail', commandIndex: cmdIndex })
+        throw { commandIndex: cmdIndex }
       }
-
       player.x = next.x
       player.y = next.y
-      steps.push({ ...player })
+      events.push({ type: 'move', position: { ...player }, commandIndex: cmdIndex })
     }
 
     if (cmd.type === 'repeat') {
       for (let i = 0; i < cmd.times; i++) {
-        executeCommands(cmd.commands, player, grid, steps)
+        executeCommands(cmd.commands, player, grid, dirState, events, counter)
       }
     }
   }
 }
 
-function move(pos: Position, direction: string): Position {
+export function countCommands(commands: Command[]): number {
+  let count = 0
+  for (const cmd of commands) {
+    if (cmd.type === 'move') count++
+    if (cmd.type === 'direction') count++
+    if (cmd.type === 'repeat') {
+      count++
+      count += countCommands(cmd.commands)
+    }
+  }
+  return count
+}
+
+function moveOne(pos: Position, direction: Direction): Position {
   switch (direction) {
     case 'up':    return { x: pos.x, y: pos.y - 1 }
     case 'down':  return { x: pos.x, y: pos.y + 1 }
     case 'left':  return { x: pos.x - 1, y: pos.y }
     case 'right': return { x: pos.x + 1, y: pos.y }
-    default: throw new Error(`Неизвестное направление: ${direction}`)
   }
 }
 
