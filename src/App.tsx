@@ -10,7 +10,12 @@ import { parseCommands } from './core/CommandParser'
 import { runCommands, countCommands } from './core/GameEngine'
 import { levels } from './levels/index'
 import { useGameStore } from './store/gameStore'
-import type { GameState, Position, Direction, GameEvent } from './core/GameEngine'
+import type { GameState, Position, GameEvent } from './core/GameEngine'
+
+const DIR_ANGLE: Record<string, number> = { right: 0, down: 90, left: 180, up: -90 }
+function nearestAngle(current: number, target: number): number {
+  return current + (((target - current) % 360 + 540) % 360 - 180)
+}
 
 export default function App() {
   const [screen, setScreen] = useState<'select' | 'game'>('select')
@@ -24,7 +29,7 @@ export default function App() {
     status: 'idle',
   })
   const [displayPos, setDisplayPos] = useState<Position>(levels[0].state.player)
-  const [currentDirection, setCurrentDirection] = useState<Direction>('right')
+  const [currentRotation, setCurrentRotation] = useState(0)
   const [animating, setAnimating] = useState(false)
   const [visibleStatus, setVisibleStatus] = useState<'idle' | 'win' | 'fail'>('idle')
   const [teleporting, setTeleporting] = useState(false)
@@ -76,7 +81,7 @@ export default function App() {
       }
 
       if (event.type === 'turn') {
-        setCurrentDirection(event.direction)
+        setCurrentRotation(r => r + 90)
         setActiveCommandIndex(event.commandIndex)
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
       }
@@ -128,7 +133,7 @@ export default function App() {
 
     const launch = () => {
       setDisplayPos(startPos)
-      setCurrentDirection(levels[currentLevelIndex].state.direction)
+      setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[currentLevelIndex].state.direction ?? 'right']))
       setVisibleStatus('idle')
       setActiveCommandIndex(null)
       setFailedCommandIndex(null)
@@ -181,7 +186,7 @@ export default function App() {
     setTeleporting(false)
     setVisibleStatus('idle')
     setActiveCommandIndex(null)
-    setCurrentDirection(levels[currentLevelIndex].state.direction)
+    setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[currentLevelIndex].state.direction ?? 'right']))
     setDisplayPos(levels[currentLevelIndex].state.player)
     setState({ ...levels[currentLevelIndex].state, status: 'idle', fuel: levels[currentLevelIndex].state.fuel })
     setCurrentFuel(levels[currentLevelIndex].state.fuel)
@@ -199,7 +204,7 @@ export default function App() {
       setCurrentLevelIndex(nextIndex)
       setState(getLevelState(nextIndex))
       setDisplayPos(levels[nextIndex].state.player)
-      setCurrentDirection(levels[nextIndex].state.direction)
+      setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[nextIndex].state.direction ?? 'right']))
       setCurrentFuel(levels[nextIndex].state.fuel)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
@@ -215,7 +220,7 @@ export default function App() {
       setCurrentLevelIndex(prevIndex)
       setState(getLevelState(prevIndex))
       setDisplayPos(levels[prevIndex].state.player)
-      setCurrentDirection(levels[prevIndex].state.direction)
+      setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[prevIndex].state.direction ?? 'right']))
       setCurrentFuel(levels[prevIndex].state.fuel)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
@@ -234,7 +239,7 @@ export default function App() {
           setCurrentLevelIndex(index)
           setState(getLevelState(index))
           setDisplayPos(levels[index].state.player)
-          setCurrentDirection(levels[index].state.direction)
+          setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[index].state.direction ?? 'right']))
           setVisibleStatus(levelWins[index] ? 'win' : 'idle')
           setCurrentFuel(levels[index].state.fuel)
           setActiveCommandIndex(null)
@@ -259,15 +264,16 @@ export default function App() {
       </div>
 
       <div className="flex gap-12 items-start">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 w-[336px]">
           <GameGrid
             grid={state.grid}
             player={displayPos}
             goal={state.goal}
             teleporting={teleporting}
-            direction={currentDirection}
+            rotation={currentRotation}
             obstacleTheme={currentLevel.visual.obstacleTheme}
             GoalPlanet={currentLevel.visual.GoalPlanet}
+            animating={animating}
           />
           <div className="flex items-center gap-2 text-sm font-mono">
             <span>⛽</span>
