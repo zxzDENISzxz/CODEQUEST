@@ -18,8 +18,7 @@ export interface GameState {
   player: Position
   goal: Position
   grid: Cell[][]
-  status: 'idle' | 'win' | 'fail'
-  steps: Position[]
+  status?: 'idle' | 'win' | 'fail'
   direction: Direction
   fuel: number
 }
@@ -38,7 +37,7 @@ export function runCommands(state: GameState, commands: Command[]): {
     const finalState: GameState = {
       ...state,
       player,
-      steps: events.filter(e => e.type === 'move').map(e => (e as { position: Position }).position),
+
       status: 'fail',
       direction: dirState.direction,
       fuel: dirState.fuel,
@@ -52,7 +51,6 @@ export function runCommands(state: GameState, commands: Command[]): {
   const finalState: GameState = {
     ...state,
     player,
-    steps: events.filter(e => e.type === 'move').map(e => (e as { position: Position }).position),
     status: won ? 'win' : 'fail',
     direction: dirState.direction,
     fuel: dirState.fuel,
