@@ -32,7 +32,7 @@ export function runCommands(state: GameState, commands: Command[]): {
   const events: GameEvent[] = []
 
   try {
-    executeCommands(commands, player, state.grid, dirState, events, { index: 0 })
+    executeCommands(commands, player, state.grid, dirState, events)
   } catch (e: unknown) {
     const finalState: GameState = {
       ...state,
@@ -64,34 +64,30 @@ function executeCommands(
   grid: Cell[][],
   dirState: { direction: Direction },
   events: GameEvent[],
-  counter: { index: number }
 ): void {
   const directions: Direction[] = ['right', 'down', 'left', 'up']
-  
-  for (const cmd of commands) {
-    const cmdIndex = counter.index++
 
+  for (const cmd of commands) {
     if (cmd.type === 'turn') {
-      // Поворот на 90 градусов по часовой стрелке
       const currentIdx = directions.indexOf(dirState.direction)
       dirState.direction = directions[(currentIdx + 1) % 4]
-      events.push({ type: 'turn', direction: dirState.direction, commandIndex: cmdIndex })
+      events.push({ type: 'turn', direction: dirState.direction, commandIndex: cmd.lineIndex })
     }
 
     if (cmd.type === 'move') {
       const next = moveOne(player, dirState.direction)
       if (!isValid(next, grid)) {
-        events.push({ type: 'fail', commandIndex: cmdIndex })
-        throw { commandIndex: cmdIndex }
+        events.push({ type: 'fail', commandIndex: cmd.lineIndex })
+        throw { commandIndex: cmd.lineIndex }
       }
       player.x = next.x
       player.y = next.y
-      events.push({ type: 'move', position: { ...player }, commandIndex: cmdIndex })
+      events.push({ type: 'move', position: { ...player }, commandIndex: cmd.lineIndex })
     }
 
     if (cmd.type === 'repeat') {
       for (let i = 0; i < cmd.times; i++) {
-        executeCommands(cmd.commands, player, grid, dirState, events, counter)
+        executeCommands(cmd.commands, player, grid, dirState, events)
       }
     }
   }

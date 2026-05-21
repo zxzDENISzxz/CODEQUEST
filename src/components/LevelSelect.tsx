@@ -9,10 +9,11 @@ interface LevelMeta {
 interface Props {
   levels: { meta: LevelMeta }[]
   levelWins: Record<number, boolean>
+  levelStars: Record<number, number>
   onSelect: (index: number) => void
 }
 
-export function LevelSelect({ levels, levelWins, onSelect }: Props) {
+export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) {
   return (
     <div className="min-h-screen bg-indigo-950 text-white flex flex-col items-center justify-center gap-8 p-8">
       <div className="text-center">
@@ -24,6 +25,7 @@ export function LevelSelect({ levels, levelWins, onSelect }: Props) {
         {levels.map((level, index) => {
           const isWon = levelWins[index] ?? false
           const isLocked = index > 0 && !(levelWins[index - 1] ?? false)
+          const stars = levelStars[index] ?? 0
 
           return (
             <motion.button
@@ -42,11 +44,6 @@ export function LevelSelect({ levels, levelWins, onSelect }: Props) {
                 }
               `}
             >
-              {/* Статус иконка */}
-              <div className="text-2xl mb-2">
-                {isLocked ? '🔒' : isWon ? '⭐' : '▶️'}
-              </div>
-
               <div className="font-bold text-white">
                 Уровень {level.meta.id}
               </div>
@@ -57,12 +54,14 @@ export function LevelSelect({ levels, levelWins, onSelect }: Props) {
                 {level.meta.description}
               </div>
 
-              {/* Бейдж пройден */}
-              {isWon && (
-                <div className="absolute top-3 right-3 text-xs bg-yellow-400 text-indigo-950 font-bold px-2 py-0.5 rounded-full">
-                  Пройден
-                </div>
-              )}
+              <div className="mt-3 text-base">
+                {isLocked
+                  ? '🔒'
+                  : isWon
+                    ? <>{'⭐'.repeat(stars)}{'🌑'.repeat(3 - stars)}</>
+                    : '▶️'
+                }
+              </div>
             </motion.button>
           )
         })}
