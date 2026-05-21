@@ -18,7 +18,7 @@ export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) 
     <div className="min-h-screen bg-indigo-950 text-white flex flex-col items-center justify-center gap-8 p-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-yellow-400">CodeQuest 🚀</h1>
-        <p className="text-indigo-300 mt-2">Выбери уровень</p>
+        <p className="text-indigo-300 mt-2">Выбери сектор</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
@@ -45,7 +45,7 @@ export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) 
               `}
             >
               <div className="font-bold text-white">
-                Уровень {level.meta.id}
+                Сектор {level.meta.id}
               </div>
               <div className="text-indigo-300 text-sm mt-1">
                 {level.meta.title}

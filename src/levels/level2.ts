@@ -6,6 +6,7 @@ export const level2: GameState = {
   status: 'idle',
   steps:  [],
   direction: 'right',
+  fuel: 24,
   grid: [
     ['empty', 'wall', 'empty', 'empty', 'empty'],
     ['empty', 'wall', 'empty', 'wall', 'wall'],
@@ -17,10 +18,11 @@ export const level2: GameState = {
 
 export const level2Meta = {
   id: 2,
-  title: 'Направление',
-  description: 'Помоги роботу добраться до звезды!',
-  hint: 'Попробуй: "turn" чтобы повернуться на 90°, "move" чтобы двигаться.',
+  title: 'Пояс Дарна',
+  description: 'Первые астероиды. Прямой курс на Руфу заблокирован.',
+  hint: 'Препятствия обнаружены. turn — поворот 90°. move — манёвр.\nТоплива: 24.',
   allowedCommands: ['move', 'turn'],
   maxCommands: 20,
-  minCommands: 12,
+  minCommands: 16,
+  fuel: 20,
 }

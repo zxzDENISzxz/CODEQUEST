@@ -6,6 +6,7 @@ export const level1: GameState = {
   status: 'idle',
   steps:  [],
   direction: 'right',
+  fuel: 12,
   grid: [
     ['empty', 'empty', 'empty', 'empty', 'empty']
   ],
@@ -13,10 +14,11 @@ export const level1: GameState = {
 
 export const level1Meta = {
   id: 1,
-  title: 'Первые шаги',
-  description: 'Помоги роботу добраться до звезды!',
-  hint: 'Используй команду: "move" для перемещения.',
+  title: 'Туманность Веги',
+  description: 'Зикс входит в первый сектор. Планета Пиксо виднеется вдали.',
+  hint: 'Топлива: 4 единицы. Один манёвр — минус одно деление.\nКоманда: move',
   allowedCommands: ['move'],
-  maxCommands: 10,
+  maxCommands: 4,
   minCommands: 2,
+  fuel: 4,
 }
