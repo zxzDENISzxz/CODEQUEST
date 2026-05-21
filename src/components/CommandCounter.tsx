@@ -1,3 +1,7 @@
+export function calcStars(count: number, min: number): number {
+  return count <= min ? 3 : count <= min * 1.5 ? 2 : 1
+}
+
 interface Props {
   count: number
   min: number
@@ -8,7 +12,7 @@ export function CommandCounter({ count, min, status }: Props) {
   if (status === 'idle') return null
 
   const isOptimal = count <= min
-  const stars = count <= min ? 3 : count <= min * 1.5 ? 2 : 1
+  const stars = calcStars(count, min)
 
   return (
     <div className={`

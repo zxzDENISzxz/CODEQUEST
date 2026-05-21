@@ -20,7 +20,7 @@ export const level4Meta = {
   title: 'Лабиринт с циклами',
   description: 'Используй repeat чтобы сократить код!',
   hint: 'Комбинируй move и repeat\nrepeat N {\n  команды\n}',
-  allowedCommands: ['move', 'repeat', 'direction'],
+  allowedCommands: ['move', 'repeat', 'turn'],
   maxCommands: 15,
   minCommands: 5,
 }

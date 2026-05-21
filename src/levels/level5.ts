@@ -20,7 +20,7 @@ export const level5Meta = {
   title: 'Мастер циклов',
   description: 'Финальный уровень! Используй всё что знаешь.',
   hint: 'Комбинируй repeat и move\nМожно вкладывать repeat внутрь repeat',
-  allowedCommands: ['move', 'repeat', 'direction'],
+  allowedCommands: ['move', 'repeat', 'turn'],
   maxCommands: 20,
   minCommands: 5,
 }

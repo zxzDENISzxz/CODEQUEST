@@ -19,8 +19,8 @@ export const level3Meta = {
   id: 3,
   title: 'Циклы',
   description: 'Дойди до звезды используя команду repeat!',
-  hint: 'Вместо четырёх одинаковых команд используй:\nrepeat 4 {\n  move right\n}',
-  allowedCommands: ['move', 'repeat', 'direction'],
+  hint: 'Вместо четырёх одинаковых команд используй:\nrepeat 4 {\n  move\n}',
+  allowedCommands: ['move', 'repeat'],
   maxCommands: 10,
-  minCommands: 2, // repeat 4 { move right } = 1 блок
+  minCommands: 2, // repeat 4 { move }
 }

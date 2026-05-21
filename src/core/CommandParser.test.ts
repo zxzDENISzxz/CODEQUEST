@@ -2,10 +2,9 @@ import { parseCommands } from './CommandParser'
 
 // Простой тест прямо в консоли
 const result = parseCommands(`
-move right
-move right
+turn
 repeat 3 {
-  move up
+  move
 }
 `)
 

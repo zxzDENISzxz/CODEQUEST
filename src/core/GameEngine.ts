@@ -32,9 +32,8 @@ export function runCommands(state: GameState, commands: Command[]): {
   const events: GameEvent[] = []
 
   try {
-    executeCommands(commands, player, state.grid, dirState, events, { index: 0 })
+    executeCommands(commands, player, state.grid, dirState, events)
   } catch (e: unknown) {
-    const err = e as { commandIndex: number }
     const finalState: GameState = {
       ...state,
       player,
@@ -65,30 +64,30 @@ function executeCommands(
   grid: Cell[][],
   dirState: { direction: Direction },
   events: GameEvent[],
-  counter: { index: number }
 ): void {
-  for (const cmd of commands) {
-    const cmdIndex = counter.index++
+  const directions: Direction[] = ['right', 'down', 'left', 'up']
 
-    if (cmd.type === 'direction') {
-      dirState.direction = cmd.direction
-      events.push({ type: 'turn', direction: cmd.direction, commandIndex: cmdIndex })
+  for (const cmd of commands) {
+    if (cmd.type === 'turn') {
+      const currentIdx = directions.indexOf(dirState.direction)
+      dirState.direction = directions[(currentIdx + 1) % 4]
+      events.push({ type: 'turn', direction: dirState.direction, commandIndex: cmd.lineIndex })
     }
 
     if (cmd.type === 'move') {
       const next = moveOne(player, dirState.direction)
       if (!isValid(next, grid)) {
-        events.push({ type: 'fail', commandIndex: cmdIndex })
-        throw { commandIndex: cmdIndex }
+        events.push({ type: 'fail', commandIndex: cmd.lineIndex })
+        throw { commandIndex: cmd.lineIndex }
       }
       player.x = next.x
       player.y = next.y
-      events.push({ type: 'move', position: { ...player }, commandIndex: cmdIndex })
+      events.push({ type: 'move', position: { ...player }, commandIndex: cmd.lineIndex })
     }
 
     if (cmd.type === 'repeat') {
       for (let i = 0; i < cmd.times; i++) {
-        executeCommands(cmd.commands, player, grid, dirState, events, counter)
+        executeCommands(cmd.commands, player, grid, dirState, events)
       }
     }
   }
@@ -97,8 +96,7 @@ function executeCommands(
 export function countCommands(commands: Command[]): number {
   let count = 0
   for (const cmd of commands) {
-    if (cmd.type === 'move') count++
-    if (cmd.type === 'direction') count++
+    if (cmd.type === 'move' || cmd.type === 'turn') count++
     if (cmd.type === 'repeat') {
       count++
       count += countCommands(cmd.commands)

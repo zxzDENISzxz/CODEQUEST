@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { GameGrid } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
 import { LevelSelect } from './components/LevelSelect'
-import { CommandCounter } from './components/CommandCounter'
+import { CommandCounter, calcStars } from './components/CommandCounter'
 import { parseCommands } from './core/CommandParser'
 import { runCommands, countCommands } from './core/GameEngine'
 import { levels } from './levels/index'
@@ -12,7 +12,7 @@ import type { GameState, Position, Direction, GameEvent } from './core/GameEngin
 export default function App() {
   const [screen, setScreen] = useState<'select' | 'game'>('select')
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
-  const { levelWins, levelCodes, setWin } = useGameStore()
+  const { levelWins, levelCodes, levelStars, setWin, setStars } = useGameStore()
 
   const [state, setState] = useState<GameState>({
     ...levels[0].state,
@@ -27,7 +27,10 @@ export default function App() {
   const [activeCommandIndex, setActiveCommandIndex] = useState<number | null>(null)
   const [lastCommandCount, setLastCommandCount] = useState<number | null>(null)
   const animationRef = useRef(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const launchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [failedCommandIndex, setFailedCommandIndex] = useState<number | null>(null)
+  const [lineExecCounts, setLineExecCounts] = useState<Record<number, number>>({})
 
   function getLevelState(index: number): GameState {
     return {
@@ -48,17 +51,19 @@ export default function App() {
     setVisibleStatus('idle')
 
     let i = 0
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       const event = events[i]
 
       if (event.type === 'move') {
         setDisplayPos(event.position)
         setActiveCommandIndex(event.commandIndex)
+        setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
       }
 
       if (event.type === 'turn') {
         setCurrentDirection(event.direction)
         setActiveCommandIndex(event.commandIndex)
+        setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
       }
 
       if (event.type === 'fail') {
@@ -66,7 +71,8 @@ export default function App() {
       }
 
       if (event.type === 'win' || event.type === 'fail') {
-        clearInterval(interval)
+        clearInterval(intervalRef.current!)
+        intervalRef.current = null
         animationRef.current = false
         setAnimating(false)
         setActiveCommandIndex(null)
@@ -76,15 +82,14 @@ export default function App() {
 
       i++
       if (i >= events.length) {
-        clearInterval(interval)
+        clearInterval(intervalRef.current!)
+        intervalRef.current = null
         animationRef.current = false
         setAnimating(false)
         setActiveCommandIndex(null)
         setVisibleStatus(finalState.status as 'idle' | 'win' | 'fail')
       }
     }, 300)
-
-    return () => clearInterval(interval)
   }
 
   const currentLevel = levels[currentLevelIndex]
@@ -112,6 +117,7 @@ export default function App() {
       setVisibleStatus('idle')
       setActiveCommandIndex(null)
       setFailedCommandIndex(null)
+      setLineExecCounts({})
 
       setTimeout(() => {
         setTeleporting(false)
@@ -127,7 +133,10 @@ export default function App() {
         setLastCommandCount(count)
         setState(finalState)
 
-        if (finalState.status === 'win') setWin(currentLevelIndex)
+        if (finalState.status === 'win') {
+          setWin(currentLevelIndex)
+          setStars(currentLevelIndex, calcStars(count, meta.minCommands))
+        }
 
         playEvents(events, finalState)
       }, 50)
@@ -137,11 +146,22 @@ export default function App() {
       launch()
     } else {
       setTeleporting(true)
-      setTimeout(launch, 400)
+      launchTimeoutRef.current = setTimeout(launch, 400)
     }
   }
 
   function handleReset() {
+    if (launchTimeoutRef.current) {
+      clearTimeout(launchTimeoutRef.current)
+      launchTimeoutRef.current = null
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    animationRef.current = false
+    setAnimating(false)
+    setTeleporting(false)
     setVisibleStatus('idle')
     setActiveCommandIndex(null)
     setCurrentDirection(levels[currentLevelIndex].state.direction)
@@ -149,6 +169,7 @@ export default function App() {
     setState({ ...levels[currentLevelIndex].state, status: 'idle', steps: [] })
     setLastCommandCount(null)
     setFailedCommandIndex(null)
+    setLineExecCounts({})
   }
 
   function handleNextLevel() {
@@ -161,6 +182,8 @@ export default function App() {
       setCurrentDirection(levels[nextIndex].state.direction)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
+      setLineExecCounts({})
+      setFailedCommandIndex(null)
     }
   }
 
@@ -174,6 +197,8 @@ export default function App() {
       setCurrentDirection(levels[prevIndex].state.direction)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
+      setLineExecCounts({})
+      setFailedCommandIndex(null)
     }
   }
 
@@ -182,6 +207,7 @@ export default function App() {
       <LevelSelect
         levels={levels}
         levelWins={levelWins}
+        levelStars={levelStars}
         onSelect={(index) => {
           setCurrentLevelIndex(index)
           setState(getLevelState(index))
@@ -190,6 +216,8 @@ export default function App() {
           setVisibleStatus(levelWins[index] ? 'win' : 'idle')
           setActiveCommandIndex(null)
           setLastCommandCount(null)
+          setLineExecCounts({})
+          setFailedCommandIndex(null)
           setScreen('game')
         }}
       />
@@ -197,17 +225,12 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-indigo-950 text-white flex flex-col items-center justify-center gap-8 p-8">
+    <div className="min-h-screen bg-indigo-950 text-white flex flex-col items-center gap-8 p-8 pt-12">
+
       <div className="text-center">
         <h1 className="text-4xl font-bold text-yellow-400">CodeQuest 🚀</h1>
         <p className="text-indigo-300 mt-1">Уровень {meta.id} — {meta.title}</p>
         <p className="text-indigo-400 text-sm mt-1">{meta.description}</p>
-        <button
-          onClick={() => setScreen('select')}
-          className="mt-3 text-indigo-400 hover:text-white text-sm transition-colors cursor-pointer"
-        >
-          ← На карту уровней
-        </button>
       </div>
 
       <div className="flex gap-12 items-start">
@@ -219,26 +242,33 @@ export default function App() {
             teleporting={teleporting}
             direction={currentDirection}
           />
-          {!animating && visibleStatus === 'win' && (
-            <div className="text-center text-2xl font-bold text-green-400">
-              🎉 Победа!
-            </div>
-          )}
-          {!animating && visibleStatus === 'fail' && (
-            <div className="text-center text-2xl font-bold text-red-400">
-              💥 Попробуй ещё раз!
-            </div>
-          )}
-          {!animating && lastCommandCount !== null && visibleStatus !== 'idle' && (
-            <CommandCounter
-              count={lastCommandCount}
-              min={meta.minCommands}
-              status={visibleStatus}
-            />
-          )}
+          <div className="h-24 flex flex-col items-center justify-center gap-2">
+            {!animating && visibleStatus === 'win' && (
+              <div className="text-center text-2xl font-bold text-green-400">
+                🎉 Победа!
+              </div>
+            )}
+            {!animating && visibleStatus === 'fail' && (
+              <div className="text-center text-2xl font-bold text-red-400">
+                💥 Попробуй ещё раз!
+              </div>
+            )}
+            {!animating && lastCommandCount !== null && visibleStatus !== 'idle' && (
+              <CommandCounter
+                count={lastCommandCount}
+                min={meta.minCommands}
+                status={visibleStatus}
+              />
+            )}
+            {!animating && visibleStatus === 'win' && lastCommandCount === null && levelStars[currentLevelIndex] && (
+              <div className="text-xl">
+                {'⭐'.repeat(levelStars[currentLevelIndex])}{'🌑'.repeat(3 - levelStars[currentLevelIndex])}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 w-80">
           <div className="flex gap-2 text-indigo-300 text-sm">
             <span className="flex-shrink-0">💡</span>
             <div className="whitespace-pre-wrap">{meta.hint}</div>
@@ -250,6 +280,7 @@ export default function App() {
             onCodeChange={handleCodeChange}
             activeCommandIndex={activeCommandIndex}
             failedCommandIndex={failedCommandIndex}
+            lineExecCounts={lineExecCounts}
           />
           <button
             onClick={handleReset}
@@ -257,20 +288,28 @@ export default function App() {
           >
             🔄 Сбросить
           </button>
-          <div className="flex gap-2 mt-4 pt-4 border-t border-indigo-700">
+          <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-indigo-700">
+            <div className="flex gap-2">
+              <button
+                onClick={handlePreviousLevel}
+                disabled={currentLevelIndex === 0}
+                className="flex-1 py-2 rounded-lg bg-indigo-700 text-white hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                ← Назад
+              </button>
+              <button
+                onClick={handleNextLevel}
+                disabled={currentLevelIndex === levels.length - 1 || visibleStatus !== 'win' || animating}
+                className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Далее →
+              </button>
+            </div>
             <button
-              onClick={handlePreviousLevel}
-              disabled={currentLevelIndex === 0}
-              className="flex-1 py-2 rounded-lg bg-indigo-700 text-white hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={() => setScreen('select')}
+              className="w-full py-2 rounded-lg bg-indigo-900 hover:bg-indigo-800 text-indigo-300 hover:text-white text-sm transition-colors cursor-pointer border border-indigo-700"
             >
-              ← Назад
-            </button>
-            <button
-              onClick={handleNextLevel}
-              disabled={currentLevelIndex === levels.length - 1 || visibleStatus !== 'win' || animating}
-              className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Далее →
+              ← На карту уровней
             </button>
           </div>
         </div>
