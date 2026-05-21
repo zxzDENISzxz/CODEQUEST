@@ -264,7 +264,7 @@ export default function App() {
       </div>
 
       <div className="flex gap-12 items-start">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 w-[336px]">
           <GameGrid
             grid={state.grid}
             player={displayPos}
