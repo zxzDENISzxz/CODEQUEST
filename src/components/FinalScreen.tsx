@@ -127,15 +127,20 @@ export function FinalScreen({ onContinue }: Props) {
         Нос корабля при rotate≈88° выступает ~19px вниз от pivot →
         посадка при y ≈ 266.
       */}
+      {/*
+        Корабль вращается 0°→270° (по часовой) — нос описывает дугу вперёд-вниз-назад-вверх.
+        В финале: нос смотрит вверх, двигатель вниз (к планете).
+        Двигатель при 270° смещён на +16px вниз от пивота → посадка при y≈269.
+      */}
       <motion.div
         className="absolute left-1/2 top-1/2 pointer-events-none"
         style={{ marginLeft: -24, marginTop: -24 }}
         animate={{
-          x:       [185,  168,  142,  106,  65,  28,   8,   0,   0],
-          y:       [-215, -185, -140,  -72,  22, 118, 220, 266, 259],
-          rotate:  [  0,    9,   22,   39,  58,  74,  83,  88,  88],
-          opacity: [  0,    1,    1,    1,   1,   1,   1,   1,   1],
-          scale:   [  1,    1,    1,    1,   1,   1,   1, 0.87,  1],
+          x:       [185, 168, 142, 106,  65,  28,   8,   0,   0],
+          y:       [-215,-185,-140, -72,  22, 118, 220, 269, 262],
+          rotate:  [   0,  15,  40,  90, 160, 220, 258, 270, 270],
+          opacity: [   0,   1,   1,   1,   1,   1,   1,   1,   1],
+          scale:   [   1,   1,   1,   1,   1,   1,   1, 0.87,   1],
         }}
         transition={{
           duration: 6,
@@ -144,17 +149,17 @@ export function FinalScreen({ onContinue }: Props) {
           ease: 'linear',
         }}
       >
-        {/* Тяга тормозного двигателя — нарастает в последние 40% полёта */}
+        {/* Тяга — вращается вместе с кораблём, при 270° направлена вниз к планете */}
         <motion.div
           className="absolute rounded-full blur-md pointer-events-none"
           style={{
-            width: 40, height: 40,
+            width: 44, height: 44,
             background: 'radial-gradient(circle, rgba(251,146,60,0.95) 0%, rgba(253,224,71,0.35) 50%, transparent 72%)',
-            left: -24, top: 4,
+            left: -26, top: 2,
           }}
           animate={{
-            opacity: [0, 0, 0, 0, 0.25, 0.85, 1.0, 0.45, 0],
-            scale:   [0, 0, 0, 0, 0.4,  1.1,  1.6, 0.9,  0],
+            opacity: [0, 0, 0, 0.1, 0.45, 0.9, 1.0, 0.5, 0],
+            scale:   [0, 0, 0, 0.2, 0.6,  1.2, 1.7, 0.9, 0],
           }}
           transition={{
             duration: 6,

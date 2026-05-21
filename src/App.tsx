@@ -36,9 +36,11 @@ export default function App() {
   const [failedCommandIndex, setFailedCommandIndex] = useState<number | null>(null)
   const [lineExecCounts, setLineExecCounts] = useState<Record<number, number>>({})
   const [showFinalScreen, setShowFinalScreen] = useState(false)
+  const freshWinRef = useRef(false)
 
   useEffect(() => {
-    if (visibleStatus === 'win' && currentLevelIndex === levels.length - 1 && !animating) {
+    if (visibleStatus === 'win' && currentLevelIndex === levels.length - 1 && !animating && freshWinRef.current) {
+      freshWinRef.current = false
       const t = setTimeout(() => setShowFinalScreen(true), 1400)
       return () => clearTimeout(t)
     }
@@ -152,6 +154,7 @@ export default function App() {
         if (finalState.status === 'win') {
           setWin(currentLevelIndex)
           setStars(currentLevelIndex, calcStars(count, meta.minCommands))
+          if (currentLevelIndex === levels.length - 1) freshWinRef.current = true
         }
 
         playEvents(events, finalState)
@@ -188,6 +191,7 @@ export default function App() {
     setFailedCommandIndex(null)
     setLineExecCounts({})
     setShowFinalScreen(false)
+    freshWinRef.current = false
   }
 
   function handleNextLevel() {
