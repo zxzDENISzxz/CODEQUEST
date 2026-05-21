@@ -3,9 +3,6 @@ import { StarBackground } from './components/StarBackground'
 import { GameGrid } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
 import { BippMessage } from './components/BippMessage'
-import { MoveHintPanel }   from './components/MoveHintPanel'
-import { TurnHintPanel }   from './components/TurnHintPanel'
-import { RepeatHintPanel } from './components/RepeatHintPanel'
 import { FinalScreen } from './components/FinalScreen'
 import { LevelSelect } from './components/LevelSelect'
 import { CommandCounter, calcStars } from './components/CommandCounter'
@@ -20,12 +17,11 @@ export default function App() {
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
   const { levelWins, levelCodes, levelStars, setWin, setStars } = useGameStore()
 
-  const [currentFuel, setCurrentFuel] = useState<number>(levels[0].meta.fuel)
+  const [currentFuel, setCurrentFuel] = useState<number>(levels[0].state.fuel)
 
   const [state, setState] = useState<GameState>({
     ...levels[0].state,
     status: 'idle',
-    steps: [],
   })
   const [displayPos, setDisplayPos] = useState<Position>(levels[0].state.player)
   const [currentDirection, setCurrentDirection] = useState<Direction>('right')
@@ -54,8 +50,7 @@ export default function App() {
     return {
       ...levels[index].state,
       status: levelWins[index] ? 'win' : 'idle',
-      steps: [],
-      fuel: levels[index].meta.fuel,
+        fuel: levels[index].state.fuel,
     }
   }
 
@@ -138,7 +133,7 @@ export default function App() {
       setActiveCommandIndex(null)
       setFailedCommandIndex(null)
       setLineExecCounts({})
-      setCurrentFuel(levels[currentLevelIndex].meta.fuel)
+      setCurrentFuel(levels[currentLevelIndex].state.fuel)
 
       setTimeout(() => {
         setTeleporting(false)
@@ -146,8 +141,7 @@ export default function App() {
         const freshState: GameState = {
           ...levels[currentLevelIndex].state,
           status: 'idle',
-          steps: [],
-          fuel: levels[currentLevelIndex].meta.fuel,
+                fuel: levels[currentLevelIndex].state.fuel,
         }
 
         const { events, finalState } = runCommands(freshState, parsed.commands)
@@ -189,8 +183,8 @@ export default function App() {
     setActiveCommandIndex(null)
     setCurrentDirection(levels[currentLevelIndex].state.direction)
     setDisplayPos(levels[currentLevelIndex].state.player)
-    setState({ ...levels[currentLevelIndex].state, status: 'idle', steps: [], fuel: levels[currentLevelIndex].meta.fuel })
-    setCurrentFuel(levels[currentLevelIndex].meta.fuel)
+    setState({ ...levels[currentLevelIndex].state, status: 'idle', fuel: levels[currentLevelIndex].state.fuel })
+    setCurrentFuel(levels[currentLevelIndex].state.fuel)
     setLastCommandCount(null)
     setFailedCommandIndex(null)
     setLineExecCounts({})
@@ -206,7 +200,7 @@ export default function App() {
       setState(getLevelState(nextIndex))
       setDisplayPos(levels[nextIndex].state.player)
       setCurrentDirection(levels[nextIndex].state.direction)
-      setCurrentFuel(levels[nextIndex].meta.fuel)
+      setCurrentFuel(levels[nextIndex].state.fuel)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
@@ -222,7 +216,7 @@ export default function App() {
       setState(getLevelState(prevIndex))
       setDisplayPos(levels[prevIndex].state.player)
       setCurrentDirection(levels[prevIndex].state.direction)
-      setCurrentFuel(levels[prevIndex].meta.fuel)
+      setCurrentFuel(levels[prevIndex].state.fuel)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
@@ -242,7 +236,7 @@ export default function App() {
           setDisplayPos(levels[index].state.player)
           setCurrentDirection(levels[index].state.direction)
           setVisibleStatus(levelWins[index] ? 'win' : 'idle')
-          setCurrentFuel(levels[index].meta.fuel)
+          setCurrentFuel(levels[index].state.fuel)
           setActiveCommandIndex(null)
           setLastCommandCount(null)
           setLineExecCounts({})
@@ -272,7 +266,8 @@ export default function App() {
             goal={state.goal}
             teleporting={teleporting}
             direction={currentDirection}
-            levelIndex={currentLevelIndex}
+            obstacleTheme={currentLevel.visual.obstacleTheme}
+            GoalPlanet={currentLevel.visual.GoalPlanet}
           />
           <div className="flex items-center gap-2 text-sm font-mono">
             <span>⛽</span>
@@ -280,7 +275,7 @@ export default function App() {
             <span className={`font-bold ${currentFuel <= 2 ? 'text-red-400' : 'text-white'}`}>
               {currentFuel}
             </span>
-            <span className="text-indigo-500">/ {meta.fuel}</span>
+            <span className="text-indigo-500">/ {currentLevel.state.fuel}</span>
           </div>
 
           <div className="h-24 flex flex-col items-center justify-center gap-2">
@@ -311,9 +306,7 @@ export default function App() {
 
         <div className="flex flex-col gap-3 w-80">
           <BippMessage hint={meta.hint} />
-          {currentLevelIndex === 0 && <MoveHintPanel />}
-          {currentLevelIndex === 1 && <TurnHintPanel />}
-          {currentLevelIndex === 2 && <RepeatHintPanel />}
+          {currentLevel.HintPanel && <currentLevel.HintPanel />}
           <CommandInput
             onRun={handleRun}
             disabled={state.status === 'win'}
