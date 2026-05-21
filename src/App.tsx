@@ -3,6 +3,9 @@ import { StarBackground } from './components/StarBackground'
 import { GameGrid } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
 import { BippMessage } from './components/BippMessage'
+import { MoveHintPanel }   from './components/MoveHintPanel'
+import { TurnHintPanel }   from './components/TurnHintPanel'
+import { RepeatHintPanel } from './components/RepeatHintPanel'
 import { FinalScreen } from './components/FinalScreen'
 import { LevelSelect } from './components/LevelSelect'
 import { CommandCounter, calcStars } from './components/CommandCounter'
@@ -308,6 +311,9 @@ export default function App() {
 
         <div className="flex flex-col gap-3 w-80">
           <BippMessage hint={meta.hint} />
+          {currentLevelIndex === 0 && <MoveHintPanel />}
+          {currentLevelIndex === 1 && <TurnHintPanel />}
+          {currentLevelIndex === 2 && <RepeatHintPanel />}
           <CommandInput
             onRun={handleRun}
             disabled={state.status === 'win'}
