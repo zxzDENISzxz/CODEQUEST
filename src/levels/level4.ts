@@ -6,21 +6,23 @@ export const level4: GameState = {
   status: 'idle',
   steps:  [],
   direction: 'right',
+  fuel: 16,
   grid: [
     ['empty', 'empty', 'empty', 'empty', 'empty'],
     ['empty', 'wall',  'wall',  'empty', 'empty'],
     ['empty', 'wall',  'empty', 'empty', 'empty'],
     ['empty', 'wall',  'empty', 'wall',  'empty'],
-    ['empty', 'empty', 'empty', 'wall',  'empty' ],
+    ['empty', 'empty', 'empty', 'wall',  'empty'],
   ],
 }
 
 export const level4Meta = {
   id: 4,
-  title: 'Лабиринт с циклами',
-  description: 'Используй repeat чтобы сократить код!',
-  hint: 'Комбинируй move и repeat\nrepeat N {\n  команды\n}',
+  title: 'Разлом Кеола',
+  description: 'Плотный астероидный пояс. Эмбра где-то внутри.',
+  hint: 'Маршрут неоднозначен. Комбинируй move, turn, repeat.\nТоплива: 16.',
   allowedCommands: ['move', 'repeat', 'turn'],
   maxCommands: 15,
-  minCommands: 5,
+  minCommands: 7,
+  fuel: 16,
 }

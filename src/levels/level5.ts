@@ -6,21 +6,23 @@ export const level5: GameState = {
   status: 'idle',
   steps:  [],
   direction: 'right',
+  fuel: 14,
   grid: [
     ['empty', 'empty', 'empty', 'wall',  'empty'],
     ['empty', 'wall',  'empty', 'wall',  'empty'],
     ['empty', 'wall',  'empty', 'empty', 'empty'],
     ['empty', 'wall',  'wall',  'wall',  'empty'],
-    ['empty', 'empty', 'wall', 'empty', 'empty' ],
+    ['empty', 'empty', 'wall', 'empty', 'empty'],
   ],
 }
 
 export const level5Meta = {
   id: 5,
-  title: 'Мастер циклов',
-  description: 'Финальный уровень! Используй всё что знаешь.',
-  hint: 'Комбинируй repeat и move\nМожно вкладывать repeat внутрь repeat',
+  title: 'Серая зона',
+  description: 'Обломки старых кораблей. Нокс почти не видна в помехах.',
+  hint: 'Сложный рельеф. Можно вкладывать repeat внутрь repeat.\nТоплива: 14.',
   allowedCommands: ['move', 'repeat', 'turn'],
   maxCommands: 20,
-  minCommands: 5,
+  minCommands: 13,
+  fuel: 14,
 }
