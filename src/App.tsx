@@ -251,7 +251,7 @@ export default function App() {
           )}
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 w-80">
           <div className="flex gap-2 text-indigo-300 text-sm">
             <span className="flex-shrink-0">💡</span>
             <div className="whitespace-pre-wrap">{meta.hint}</div>
