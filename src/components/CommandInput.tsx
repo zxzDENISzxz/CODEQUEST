@@ -34,7 +34,7 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
   }, [activeCommandIndex])
 
   return (
-    <div className="flex flex-col gap-3 w-80">
+    <div className="flex flex-col gap-3 w-full">
       <div className="relative w-full h-48 rounded-lg overflow-hidden border border-indigo-700 focus-within:border-yellow-400">
 
         {/* Подсветка строк — скроллится вместе с textarea */}
