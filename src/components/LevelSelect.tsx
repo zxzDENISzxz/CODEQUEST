@@ -1,15 +1,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { StarBackground } from './StarBackground'
-
-interface LevelMeta {
-  id: number
-  title: string
-  description: string
-}
+import type { LevelDef } from '../core/types'
 
 interface Props {
-  levels: { meta: LevelMeta }[]
+  levels: LevelDef[]
   levelWins: Record<number, boolean>
   levelStars: Record<number, number>
   onSelect: (index: number) => void
@@ -124,33 +119,9 @@ function MissionLog() {
   )
 }
 
-// ─── Позиции и цвета секторов ─────────────────────────────────
-
-const SECTOR_POS = [
-  { x: 13, y: 24 },  // 1 — Туманность Веги
-  { x: 32, y: 14 },  // 2 — Пояс Дарна
-  { x: 53, y: 22 },  // 3 — Облако Скрай
-  { x: 72, y: 15 },  // 4 — Разлом Кеола
-  { x: 82, y: 44 },  // 5 — Серая зона
-  { x: 63, y: 60 },  // 6 — Кольца Зура
-  { x: 36, y: 67 },  // 7 — Сектор Буря
-  { x: 54, y: 82 },  // 8 — Родной сектор / Арума
-]
-
-const SECTOR_THEME = [
-  { color: '#a78bfa', glow: 'rgba(167,139,250,0.55)' },  // 1 nebula
-  { color: '#fb923c', glow: 'rgba(251,146,60,0.45)'  },  // 2 asteroid
-  { color: '#c084fc', glow: 'rgba(192,132,252,0.50)' },  // 3 nebula
-  { color: '#f97316', glow: 'rgba(249,115,22,0.40)'  },  // 4 asteroid
-  { color: '#94a3b8', glow: 'rgba(148,163,184,0.40)' },  // 5 debris
-  { color: '#22d3ee', glow: 'rgba(34,211,238,0.45)'  },  // 6 ice
-  { color: '#9ca3af', glow: 'rgba(156,163,175,0.40)' },  // 7 debris
-  { color: '#fbbf24', glow: 'rgba(251,191,36,0.55)'  },  // 8 home
-]
-
 // ─── Линии между секторами ────────────────────────────────────
 
-function SectorConnections({ levelWins }: { levelWins: Record<number, boolean> }) {
+function SectorConnections({ levels, levelWins }: { levels: LevelDef[], levelWins: Record<number, boolean> }) {
   return (
     <svg
       className="absolute inset-0 w-full h-full pointer-events-none"
@@ -158,8 +129,9 @@ function SectorConnections({ levelWins }: { levelWins: Record<number, boolean> }
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
     >
-      {SECTOR_POS.slice(0, -1).map((pos, i) => {
-        const next = SECTOR_POS[i + 1]
+      {levels.slice(0, -1).map((level, i) => {
+        const pos  = level.visual.mapPosition
+        const next = levels[i + 1].visual.mapPosition
         const done = levelWins[i] ?? false
         return (
           <line
@@ -180,19 +152,19 @@ function SectorConnections({ levelWins }: { levelWins: Record<number, boolean> }
 // ─── Нода сектора ─────────────────────────────────────────────
 
 interface NodeProps {
-  level: { meta: LevelMeta }
+  level: LevelDef
   index: number
   isWon: boolean
   isLocked: boolean
+  isLast: boolean
   stars: number
   onSelect: () => void
 }
 
-function SectorNode({ level, index, isWon, isLocked, stars, onSelect }: NodeProps) {
+function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: NodeProps) {
   const [hovered, setHovered] = useState(false)
-  const pos    = SECTOR_POS[index]
-  const theme  = SECTOR_THEME[index]
-  const isLast = index === 7
+  const pos    = level.visual.mapPosition
+  const theme  = level.visual.mapColor
   const showRight = pos.x < 52
 
   return (
@@ -436,7 +408,7 @@ export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) 
 
       {/* Карта */}
       <div className="relative z-10 flex-1">
-        <SectorConnections levelWins={levelWins} />
+        <SectorConnections levels={levels} levelWins={levelWins} />
         <MissionLog />
 
         {levels.map((level, index) => (
@@ -446,6 +418,7 @@ export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) 
             index={index}
             isWon={levelWins[index]   ?? false}
             isLocked={index > 0 && !(levelWins[index - 1] ?? false)}
+            isLast={index === levels.length - 1}
             stars={levelStars[index]  ?? 0}
             onSelect={() => onSelect(index)}
           />

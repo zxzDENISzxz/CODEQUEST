@@ -1,28 +1,33 @@
-import type { GameState } from '../core/GameEngine'
+import type { LevelDef } from '../core/types'
+import { PlanetRufa } from '../components/GoalPlanets'
+import { TurnHintPanel } from '../components/TurnHintPanel'
 
-export const level2: GameState = {
-  player: { x: 0, y: 0 },
-  goal:   { x: 4, y: 0 },
-  status: 'idle',
-  steps:  [],
-  direction: 'right',
-  fuel: 24,
-  grid: [
-    ['empty', 'wall', 'empty', 'empty', 'empty'],
-    ['empty', 'wall', 'empty', 'wall', 'wall'],
-    ['empty', 'wall', 'empty', 'empty', 'empty'],
-    ['empty', 'wall', 'wall', 'wall', 'empty'],
-    ['empty', 'empty', 'empty', 'empty', 'empty'],
-  ],
-}
-
-export const level2Meta = {
-  id: 2,
-  title: 'Пояс Дарна',
-  description: 'Первые астероиды. Прямой курс на Руфу заблокирован.',
-  hint: 'Препятствия обнаружены. turn — поворот 90°. move — манёвр.\nТоплива: 24.',
-  allowedCommands: ['move', 'turn'],
-  maxCommands: 20,
-  minCommands: 16,
-  fuel: 20,
+export const level2: LevelDef = {
+  state: {
+    player: { x: 0, y: 0 },
+    goal:   { x: 4, y: 0 },
+    direction: 'right',
+    fuel: 20,
+    grid: [
+      ['empty', 'wall',  'empty', 'empty', 'empty'],
+      ['empty', 'wall',  'empty', 'wall',  'wall' ],
+      ['empty', 'wall',  'empty', 'empty', 'empty'],
+      ['empty', 'wall',  'wall',  'wall',  'empty'],
+      ['empty', 'empty', 'empty', 'empty', 'empty'],
+    ],
+  },
+  meta: {
+    id: 2,
+    title: 'Пояс Дарна',
+    description: 'Первые астероиды. Прямой курс на Руфу заблокирован.',
+    hint: 'Препятствия обнаружены. turn — поворот 90°. move — манёвр.\nТоплива: 20.',
+    minCommands: 16,
+  },
+  visual: {
+    obstacleTheme: 'asteroid',
+    GoalPlanet: PlanetRufa,
+    mapPosition: { x: 32, y: 14 },
+    mapColor: { color: '#fb923c', glow: 'rgba(251,146,60,0.45)' },
+  },
+  HintPanel: TurnHintPanel,
 }

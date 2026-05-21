@@ -1,73 +1,131 @@
-# React + TypeScript + Vite
+# CodeQuest
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Образовательная игра-головоломка: пиши команды для навигационной системы корабля и веди пилота Зикса через 8 космических секторов домой.
 
-Currently, two official plugins are available:
+## Стек
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** + **TypeScript**
+- **Vite** — сборка
+- **Tailwind CSS v4** — стили
+- **Framer Motion** — анимации
+- **Zustand** — хранение прогресса (localStorage)
 
-## React Compiler
+## Запуск
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Сборка для продакшена:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run preview
 ```
+
+## Как играть
+
+Вводи команды в текстовое поле и нажимай **Запустить**. Корабль выполняет их по очереди. Цель — добраться до планеты, не потратив всё топливо и не врезавшись в препятствие.
+
+| Команда | Действие |
+|---|---|
+| `move` | шаг вперёд |
+| `turn` | поворот на 90° по часовой стрелке |
+| `repeat N { }` | повторить N раз команды в скобках |
+
+**Звёзды** начисляются за эффективность: чем меньше команд — тем больше звёзд. Порог для 3 звёзд задаётся полем `minCommands` в файле уровня.
+
+## Структура проекта
+
+```
+src/
+├── core/
+│   ├── GameEngine.ts       # игровой движок: выполнение команд, события
+│   ├── CommandParser.ts    # парсер текста в команды
+│   └── types.ts            # общие типы (LevelDef, LevelMeta, LevelVisual)
+│
+├── levels/
+│   ├── _template.ts        # шаблон для нового уровня (с комментариями)
+│   ├── index.ts            # массив всех уровней
+│   ├── level1.ts           # Туманность Веги
+│   ├── level2.ts           # Пояс Дарна
+│   ├── level3.ts           # Облако Скрай
+│   ├── level4.ts           # Разлом Кеола
+│   ├── level5.ts           # Серая зона
+│   ├── level6.ts           # Кольца Зура
+│   ├── level7.ts           # Сектор Буря
+│   └── level8.ts           # Родной сектор
+│
+├── components/
+│   ├── GameGrid.tsx         # игровая сетка с кораблём и препятствиями
+│   ├── LevelSelect.tsx      # карта секторов с нодами
+│   ├── CommandInput.tsx     # текстовое поле с подсветкой текущей строки
+│   ├── GoalPlanets.tsx      # SVG-компоненты планет-целей (8 штук)
+│   ├── BippMessage.tsx      # панель подсказок от ИИ БИПП
+│   ├── CommandCounter.tsx   # счётчик команд и звёзды
+│   ├── FinalScreen.tsx      # финальный экран после прохождения игры
+│   ├── StarBackground.tsx   # анимированный звёздный фон
+│   ├── MoveHintPanel.tsx    # обучающая панель для команды move
+│   ├── TurnHintPanel.tsx    # обучающая панель для команды turn
+│   └── RepeatHintPanel.tsx  # обучающая панель для команды repeat
+│
+├── store/
+│   └── gameStore.ts         # Zustand: победы, коды, звёзды по уровням
+│
+└── App.tsx                  # корневой компонент, игровой цикл
+```
+
+## Добавить уровень
+
+1. Скопируй `src/levels/_template.ts` → `src/levels/level9.ts`
+2. Заполни поля (все описаны в шаблоне)
+3. В `src/levels/index.ts` добавь:
+
+```ts
+import { level9 } from './level9'
+
+export const levels: LevelDef[] = [..., level9]
+```
+
+Всё остальное (карта, навигация, звёзды) подхватится автоматически.
+
+### Структура уровня
+
+```ts
+{
+  state: {
+    player: { x, y }       // стартовая позиция корабля
+    goal:   { x, y }       // позиция планеты-цели
+    direction: 'right'     // начальное направление
+    fuel: 14               // лимит топлива (каждый move = -1)
+    grid: Cell[][]         // 'empty' | 'wall'
+  },
+  meta: {
+    id: 9
+    title: '...'           // название сектора
+    description: '...'    // лоровый текст для тултипа на карте
+    hint: '...'            // подсказка от БИПП в игре
+    minCommands: 7         // порог для 3 звёзд
+  },
+  visual: {
+    obstacleTheme:         // 'nebula' | 'asteroid' | 'debris' | 'ice'
+    GoalPlanet:            // компонент из GoalPlanets.tsx
+    mapPosition: { x, y } // позиция ноды на карте (0–100%)
+    mapColor: { color, glow }
+  },
+  HintPanel?: ComponentType  // необязательно, только для обучающих уровней
+}
+```
+
+## Архитектура движка
+
+Движок (`GameEngine.ts`) работает без React: принимает `GameState` и массив `Command[]`, возвращает список событий `GameEvent[]` и финальное состояние. `App.tsx` воспроизводит события с интервалом 300 мс, обновляя позицию корабля на экране.
+
+```
+parseCommands(text) → Command[]
+runCommands(state, commands) → { events, finalState }
+App.tsx воспроизводит events → анимация
+```
+
+Это позволяет тестировать логику уровней без браузера — см. `src/core/GameEngine.test.ts`.
