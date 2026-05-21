@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { StarBackground } from './components/StarBackground'
 import { GameGrid } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
 import { BippMessage } from './components/BippMessage'
@@ -251,7 +252,8 @@ export default function App() {
 
   return (
     <>
-    <div className="min-h-screen bg-indigo-950 text-white flex flex-col items-center gap-8 p-8 pt-12">
+    <div className="relative min-h-screen text-white flex flex-col items-center gap-8 p-8 pt-12" style={{ background: '#05060f' }}>
+      <StarBackground />
 
       <div className="text-center">
         <h1 className="text-4xl font-bold text-yellow-400">CodeQuest 🚀</h1>
