@@ -27,6 +27,8 @@ export default function App() {
   const [activeCommandIndex, setActiveCommandIndex] = useState<number | null>(null)
   const [lastCommandCount, setLastCommandCount] = useState<number | null>(null)
   const animationRef = useRef(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const launchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [failedCommandIndex, setFailedCommandIndex] = useState<number | null>(null)
 
   function getLevelState(index: number): GameState {
@@ -48,7 +50,7 @@ export default function App() {
     setVisibleStatus('idle')
 
     let i = 0
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       const event = events[i]
 
       if (event.type === 'move') {
@@ -66,7 +68,8 @@ export default function App() {
       }
 
       if (event.type === 'win' || event.type === 'fail') {
-        clearInterval(interval)
+        clearInterval(intervalRef.current!)
+        intervalRef.current = null
         animationRef.current = false
         setAnimating(false)
         setActiveCommandIndex(null)
@@ -76,15 +79,14 @@ export default function App() {
 
       i++
       if (i >= events.length) {
-        clearInterval(interval)
+        clearInterval(intervalRef.current!)
+        intervalRef.current = null
         animationRef.current = false
         setAnimating(false)
         setActiveCommandIndex(null)
         setVisibleStatus(finalState.status as 'idle' | 'win' | 'fail')
       }
     }, 300)
-
-    return () => clearInterval(interval)
   }
 
   const currentLevel = levels[currentLevelIndex]
@@ -137,11 +139,22 @@ export default function App() {
       launch()
     } else {
       setTeleporting(true)
-      setTimeout(launch, 400)
+      launchTimeoutRef.current = setTimeout(launch, 400)
     }
   }
 
   function handleReset() {
+    if (launchTimeoutRef.current) {
+      clearTimeout(launchTimeoutRef.current)
+      launchTimeoutRef.current = null
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    animationRef.current = false
+    setAnimating(false)
+    setTeleporting(false)
     setVisibleStatus('idle')
     setActiveCommandIndex(null)
     setCurrentDirection(levels[currentLevelIndex].state.direction)
