@@ -34,7 +34,6 @@ export function runCommands(state: GameState, commands: Command[]): {
   try {
     executeCommands(commands, player, state.grid, dirState, events, { index: 0 })
   } catch (e: unknown) {
-    const err = e as { commandIndex: number }
     const finalState: GameState = {
       ...state,
       player,
@@ -67,12 +66,16 @@ function executeCommands(
   events: GameEvent[],
   counter: { index: number }
 ): void {
+  const directions: Direction[] = ['right', 'down', 'left', 'up']
+  
   for (const cmd of commands) {
     const cmdIndex = counter.index++
 
-    if (cmd.type === 'direction') {
-      dirState.direction = cmd.direction
-      events.push({ type: 'turn', direction: cmd.direction, commandIndex: cmdIndex })
+    if (cmd.type === 'turn') {
+      // Поворот на 90 градусов по часовой стрелке
+      const currentIdx = directions.indexOf(dirState.direction)
+      dirState.direction = directions[(currentIdx + 1) % 4]
+      events.push({ type: 'turn', direction: dirState.direction, commandIndex: cmdIndex })
     }
 
     if (cmd.type === 'move') {
@@ -97,8 +100,7 @@ function executeCommands(
 export function countCommands(commands: Command[]): number {
   let count = 0
   for (const cmd of commands) {
-    if (cmd.type === 'move') count++
-    if (cmd.type === 'direction') count++
+    if (cmd.type === 'move' || cmd.type === 'turn') count++
     if (cmd.type === 'repeat') {
       count++
       count += countCommands(cmd.commands)

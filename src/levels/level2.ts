@@ -19,8 +19,8 @@ export const level2Meta = {
   id: 2,
   title: 'Направление',
   description: 'Помоги роботу добраться до звезды!',
-  hint: 'Попробуй: "direction" чтобы изменить направление, "move" чтобы двигаться.',
-  allowedCommands: ['move', 'direction'],
+  hint: 'Попробуй: "turn" чтобы повернуться на 90°, "move" чтобы двигаться.',
+  allowedCommands: ['move', 'turn'],
   maxCommands: 20,
   minCommands: 12,
 }

@@ -2,8 +2,8 @@ export type Direction = 'up' | 'down' | 'left' | 'right'
 
 export type Command =
   | { type: 'move' }
+  | { type: 'turn' }
   | { type: 'repeat'; times: number; commands: Command[] }
-  | { type: 'direction'; direction: Direction }
   | { type: 'if'; condition: string; commands: Command[] }
 
 export type ParseResult =
@@ -30,6 +30,7 @@ export function parseCommands(input: string): ParseResult {
   }
 }
 
+// Вспомогательная функция для парсинга строк
 function parseLines(lines: string[], startIndex: number): { commands: Command[]; nextIndex: number } {
   const commands: Command[] = []
   let i = startIndex
@@ -47,19 +48,8 @@ function parseLines(lines: string[], startIndex: number): { commands: Command[];
       continue
     }
 
-    // move up/down/left/right
-    const moveDirectionMatch = line.match(/^move\s+(up|down|left|right)$/)
-    if (moveDirectionMatch) {
-      commands.push({ type: 'direction', direction: moveDirectionMatch[1] as Direction })
-      commands.push({ type: 'move' })
-      i++
-      continue
-    }
-
-    // direction up/down/left/right
-    const directionMatch = line.match(/^direction\s+(up|down|left|right)$/)
-    if (directionMatch) {
-      commands.push({ type: 'direction', direction: directionMatch[1] as Direction })
+    if (line === 'turn') {
+      commands.push({ type: 'turn' })
       i++
       continue
     }
