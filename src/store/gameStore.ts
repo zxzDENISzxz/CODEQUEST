@@ -35,7 +35,7 @@ export const useGameStore = create<GameStore>()(
       reset: () => set({ levelWins: {}, levelCodes: {}, levelStars: {} }),
     }),
     {
-      name: 'codequest-progress',
+      name: 'spaceway-progress',
     }
   )
 )

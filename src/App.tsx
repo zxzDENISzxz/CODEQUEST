@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { GameGrid } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
+import { BippMessage } from './components/BippMessage'
+import { FinalScreen } from './components/FinalScreen'
 import { LevelSelect } from './components/LevelSelect'
 import { CommandCounter, calcStars } from './components/CommandCounter'
 import { parseCommands } from './core/CommandParser'
@@ -13,6 +15,8 @@ export default function App() {
   const [screen, setScreen] = useState<'select' | 'game'>('select')
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
   const { levelWins, levelCodes, levelStars, setWin, setStars } = useGameStore()
+
+  const [currentFuel, setCurrentFuel] = useState<number>(levels[0].meta.fuel)
 
   const [state, setState] = useState<GameState>({
     ...levels[0].state,
@@ -31,12 +35,23 @@ export default function App() {
   const launchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [failedCommandIndex, setFailedCommandIndex] = useState<number | null>(null)
   const [lineExecCounts, setLineExecCounts] = useState<Record<number, number>>({})
+  const [showFinalScreen, setShowFinalScreen] = useState(false)
+  const freshWinRef = useRef(false)
+
+  useEffect(() => {
+    if (visibleStatus === 'win' && currentLevelIndex === levels.length - 1 && !animating && freshWinRef.current) {
+      freshWinRef.current = false
+      const t = setTimeout(() => setShowFinalScreen(true), 1400)
+      return () => clearTimeout(t)
+    }
+  }, [visibleStatus, currentLevelIndex, animating])
 
   function getLevelState(index: number): GameState {
     return {
       ...levels[index].state,
       status: levelWins[index] ? 'win' : 'idle',
       steps: [],
+      fuel: levels[index].meta.fuel,
     }
   }
 
@@ -58,6 +73,7 @@ export default function App() {
         setDisplayPos(event.position)
         setActiveCommandIndex(event.commandIndex)
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
+        setCurrentFuel(event.fuelRemaining)
       }
 
       if (event.type === 'turn') {
@@ -66,7 +82,7 @@ export default function App() {
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
       }
 
-      if (event.type === 'fail') {
+      if (event.type === 'fail' && event.commandIndex >= 0) {
         setFailedCommandIndex(event.commandIndex)
       }
 
@@ -103,7 +119,7 @@ export default function App() {
   function handleRun(code: string) {
     handleCodeChange(code)
     const parsed = parseCommands(code)
-    if (!parsed.ok) {
+    if (parsed.ok === false) {
       alert(`Ошибка в строке ${parsed.line}: ${parsed.error}`)
       return
     }
@@ -118,6 +134,7 @@ export default function App() {
       setActiveCommandIndex(null)
       setFailedCommandIndex(null)
       setLineExecCounts({})
+      setCurrentFuel(levels[currentLevelIndex].meta.fuel)
 
       setTimeout(() => {
         setTeleporting(false)
@@ -126,6 +143,7 @@ export default function App() {
           ...levels[currentLevelIndex].state,
           status: 'idle',
           steps: [],
+          fuel: levels[currentLevelIndex].meta.fuel,
         }
 
         const { events, finalState } = runCommands(freshState, parsed.commands)
@@ -136,6 +154,7 @@ export default function App() {
         if (finalState.status === 'win') {
           setWin(currentLevelIndex)
           setStars(currentLevelIndex, calcStars(count, meta.minCommands))
+          if (currentLevelIndex === levels.length - 1) freshWinRef.current = true
         }
 
         playEvents(events, finalState)
@@ -166,10 +185,13 @@ export default function App() {
     setActiveCommandIndex(null)
     setCurrentDirection(levels[currentLevelIndex].state.direction)
     setDisplayPos(levels[currentLevelIndex].state.player)
-    setState({ ...levels[currentLevelIndex].state, status: 'idle', steps: [] })
+    setState({ ...levels[currentLevelIndex].state, status: 'idle', steps: [], fuel: levels[currentLevelIndex].meta.fuel })
+    setCurrentFuel(levels[currentLevelIndex].meta.fuel)
     setLastCommandCount(null)
     setFailedCommandIndex(null)
     setLineExecCounts({})
+    setShowFinalScreen(false)
+    freshWinRef.current = false
   }
 
   function handleNextLevel() {
@@ -180,6 +202,7 @@ export default function App() {
       setState(getLevelState(nextIndex))
       setDisplayPos(levels[nextIndex].state.player)
       setCurrentDirection(levels[nextIndex].state.direction)
+      setCurrentFuel(levels[nextIndex].meta.fuel)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
@@ -195,6 +218,7 @@ export default function App() {
       setState(getLevelState(prevIndex))
       setDisplayPos(levels[prevIndex].state.player)
       setCurrentDirection(levels[prevIndex].state.direction)
+      setCurrentFuel(levels[prevIndex].meta.fuel)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
@@ -214,6 +238,7 @@ export default function App() {
           setDisplayPos(levels[index].state.player)
           setCurrentDirection(levels[index].state.direction)
           setVisibleStatus(levelWins[index] ? 'win' : 'idle')
+          setCurrentFuel(levels[index].meta.fuel)
           setActiveCommandIndex(null)
           setLastCommandCount(null)
           setLineExecCounts({})
@@ -225,11 +250,12 @@ export default function App() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-indigo-950 text-white flex flex-col items-center gap-8 p-8 pt-12">
 
       <div className="text-center">
         <h1 className="text-4xl font-bold text-yellow-400">CodeQuest 🚀</h1>
-        <p className="text-indigo-300 mt-1">Уровень {meta.id} — {meta.title}</p>
+        <p className="text-indigo-300 mt-1">Сектор {meta.id} — {meta.title}</p>
         <p className="text-indigo-400 text-sm mt-1">{meta.description}</p>
       </div>
 
@@ -241,19 +267,29 @@ export default function App() {
             goal={state.goal}
             teleporting={teleporting}
             direction={currentDirection}
+            levelIndex={currentLevelIndex}
           />
+          <div className="flex items-center gap-2 text-sm font-mono">
+            <span>⛽</span>
+            <span className="text-indigo-300">Топливо:</span>
+            <span className={`font-bold ${currentFuel <= 2 ? 'text-red-400' : 'text-white'}`}>
+              {currentFuel}
+            </span>
+            <span className="text-indigo-500">/ {meta.fuel}</span>
+          </div>
+
           <div className="h-24 flex flex-col items-center justify-center gap-2">
             {!animating && visibleStatus === 'win' && (
               <div className="text-center text-2xl font-bold text-green-400">
-                🎉 Победа!
+                🪐 Планета достигнута!
               </div>
             )}
             {!animating && visibleStatus === 'fail' && (
               <div className="text-center text-2xl font-bold text-red-400">
-                💥 Попробуй ещё раз!
+                💥 Навигационный сбой. Повтори.
               </div>
             )}
-            {!animating && lastCommandCount !== null && visibleStatus !== 'idle' && (
+            {!animating && lastCommandCount !== null && visibleStatus === 'win' && (
               <CommandCounter
                 count={lastCommandCount}
                 min={meta.minCommands}
@@ -269,10 +305,7 @@ export default function App() {
         </div>
 
         <div className="flex flex-col gap-3 w-80">
-          <div className="flex gap-2 text-indigo-300 text-sm">
-            <span className="flex-shrink-0">💡</span>
-            <div className="whitespace-pre-wrap">{meta.hint}</div>
-          </div>
+          <BippMessage hint={meta.hint} />
           <CommandInput
             onRun={handleRun}
             disabled={state.status === 'win'}
@@ -309,11 +342,16 @@ export default function App() {
               onClick={() => setScreen('select')}
               className="w-full py-2 rounded-lg bg-indigo-900 hover:bg-indigo-800 text-indigo-300 hover:text-white text-sm transition-colors cursor-pointer border border-indigo-700"
             >
-              ← На карту уровней
+              ← На карту секторов
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    {showFinalScreen && (
+      <FinalScreen onContinue={() => { setShowFinalScreen(false); setScreen('select') }} />
+    )}
+    </>
   )
 }

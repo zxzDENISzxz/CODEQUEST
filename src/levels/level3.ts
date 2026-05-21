@@ -6,10 +6,11 @@ export const level3: GameState = {
   status: 'idle',
   steps:  [],
   direction: 'right',
+  fuel: 12,
   grid: [
     ['empty', 'empty', 'empty', 'empty', 'empty'],
     ['empty', 'empty', 'empty', 'empty', 'empty'],
-    ['empty', 'empty', 'empty', 'empty', 'empty' ],
+    ['empty', 'empty', 'empty', 'empty', 'empty'],
     ['empty', 'empty', 'empty', 'empty', 'empty'],
     ['empty', 'empty', 'empty', 'empty', 'empty'],
   ],
@@ -17,10 +18,11 @@ export const level3: GameState = {
 
 export const level3Meta = {
   id: 3,
-  title: 'Циклы',
-  description: 'Дойди до звезды используя команду repeat!',
-  hint: 'Вместо четырёх одинаковых команд используй:\nrepeat 4 {\n  move\n}',
+  title: 'Облако Скрай',
+  description: 'Открытое пространство. Путь до Тиво — длинный.',
+  hint: 'Повторяющиеся манёвры детектированы. Рекомендую:\nrepeat N {\n  move\n}\nТоплива: 12.',
   allowedCommands: ['move', 'repeat'],
   maxCommands: 10,
-  minCommands: 2, // repeat 4 { move }
+  minCommands: 2,
+  fuel: 12,
 }
