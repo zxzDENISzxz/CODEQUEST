@@ -83,7 +83,7 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
           onChange={e => onCodeChange(e.target.value)}
           onScroll={e => setScrollTop((e.target as HTMLTextAreaElement).scrollTop)}
           disabled={disabled}
-          placeholder={'move\nturn\nrepeat 4 {\n  move\n}'}
+          placeholder="введи команды..."
           className="
             absolute inset-0 w-full h-full p-3 font-mono text-sm
             bg-transparent text-white leading-6
