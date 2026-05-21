@@ -1,6 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { ComponentType } from 'react'
-import type { Cell, Position, Direction } from '../core/GameEngine'
+import type { Cell, Position } from '../core/GameEngine'
 import type { ObstacleTheme } from '../core/types'
 
 interface Props {
@@ -8,20 +9,17 @@ interface Props {
   player: Position
   goal: Position
   teleporting?: boolean
-  direction?: Direction
+  rotation?: number
   obstacleTheme?: ObstacleTheme
   GoalPlanet?: ComponentType
+  animating?: boolean
 }
+
+interface TrailDot { id: number; pos: Position }
 
 const CELL = 64
 const GAP = 4
 
-const DIRECTION_ANGLE: Record<Direction, number> = {
-  right: 0,
-  down: 90,
-  left: 180,
-  up: -90,
-}
 
 type Theme = 'asteroid' | 'ice' | 'debris' | 'nebula'
 
@@ -208,9 +206,28 @@ function WallObstacle({ x, y, theme }: { x: number; y: number; theme: Theme }) {
 }
 
 // ─── Корабль Зикса ────────────────────────────────────────────
-function ShipSVG() {
+function ShipSVG({ animating = false }: { animating?: boolean }) {
   return (
-    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" overflow="visible">
+      {animating && (
+        <>
+          <motion.ellipse cx="-12" cy="20" rx="14" ry="6"
+            fill="#f97316" opacity="0.3"
+            animate={{ rx: [14, 19, 11, 17, 14], opacity: [0.3, 0.5, 0.2, 0.4, 0.3] }}
+            transition={{ duration: 0.13, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.ellipse cx="-5" cy="20" rx="9" ry="4"
+            fill="#fbbf24" opacity="0.65"
+            animate={{ rx: [9, 13, 7, 11, 9] }}
+            transition={{ duration: 0.1, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.ellipse cx="0" cy="20" rx="5" ry="2.2"
+            fill="#fef9c3" opacity="0.9"
+            animate={{ rx: [5, 7, 4, 6, 5] }}
+            transition={{ duration: 0.08, repeat: Infinity, ease: 'linear' }}
+          />
+        </>
+      )}
       <polygon points="36,20 8,10 8,30" fill="#93c5fd"/>
       <polygon points="12,10 6,4 8,10" fill="#60a5fa"/>
       <polygon points="12,30 6,36 8,30" fill="#60a5fa"/>
@@ -218,15 +235,28 @@ function ShipSVG() {
       <circle cx="21" cy="20" r="3.5" fill="#0ea5e9"/>
       <circle cx="21" cy="20" r="2" fill="#bae6fd"/>
       <rect x="4" y="15" width="5" height="10" rx="2" fill="#475569"/>
-      <ellipse cx="3" cy="20" rx="2.5" ry="4" fill="#fbbf24" opacity="0.85"/>
-      <ellipse cx="2" cy="20" rx="1.5" ry="2.5" fill="#fef08a" opacity="0.7"/>
+      <ellipse cx="3" cy="20" rx={animating ? 3.5 : 2.5} ry={animating ? 5 : 4} fill="#fbbf24" opacity="0.85"/>
+      <ellipse cx="2" cy="20" rx={animating ? 2.5 : 1.5} ry={animating ? 3.5 : 2.5} fill="#fef08a" opacity="0.7"/>
     </svg>
   )
 }
 
 // ─── Основной компонент ───────────────────────────────────────
-export function GameGrid({ grid, player, goal, teleporting = false, direction = 'right', obstacleTheme = 'asteroid', GoalPlanet }: Props) {
+export function GameGrid({ grid, player, goal, teleporting = false, rotation = 0, obstacleTheme = 'asteroid', GoalPlanet, animating = false }: Props) {
   const theme = obstacleTheme
+
+  const [trail, setTrail] = useState<TrailDot[]>([])
+  const trailId = useRef(0)
+  const prevPlayer = useRef(player)
+
+  useEffect(() => {
+    const prev = prevPlayer.current
+    prevPlayer.current = player
+    if (!animating) { setTrail([]); return }
+    if (prev.x !== player.x || prev.y !== player.y) {
+      setTrail(t => [...t.slice(-5), { id: trailId.current++, pos: prev }])
+    }
+  }, [player, animating])
 
   return (
     <div className="relative" style={{
@@ -256,6 +286,25 @@ export function GameGrid({ grid, player, goal, teleporting = false, direction = 
         })
       )}
 
+      {trail.map((dot, i) => (
+        <motion.div
+          key={dot.id}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: 7, height: 7,
+            left: dot.pos.x * (CELL + GAP) + CELL / 2 - 3.5,
+            top:  dot.pos.y * (CELL + GAP) + CELL / 2 - 3.5,
+            background: '#60a5fa',
+            boxShadow: '0 0 6px #3b82f6',
+            zIndex: 8,
+            opacity: (i + 1) / trail.length * 0.55,
+          }}
+          initial={{ scale: 1 }}
+          animate={{ scale: 0.4 }}
+          transition={{ duration: 0.3 * (trail.length - i), ease: 'easeOut' }}
+        />
+      ))}
+
       <motion.div
         className="absolute flex items-center justify-center pointer-events-none z-10"
         style={{ width: CELL, height: CELL }}
@@ -265,7 +314,7 @@ export function GameGrid({ grid, player, goal, teleporting = false, direction = 
           y: player.y * (CELL + GAP),
           opacity: teleporting ? 0 : 1,
           scale: teleporting ? 0 : 1,
-          rotate: teleporting ? 180 : DIRECTION_ANGLE[direction],
+          rotate: rotation,
         }}
         transition={{
           x: { type: 'tween', duration: teleporting ? 0 : 0.25, ease: 'easeInOut' },
@@ -275,7 +324,7 @@ export function GameGrid({ grid, player, goal, teleporting = false, direction = 
           rotate: { type: 'spring', stiffness: 200, damping: 20 },
         }}
       >
-        <ShipSVG />
+        <ShipSVG animating={animating} />
       </motion.div>
     </div>
   )
