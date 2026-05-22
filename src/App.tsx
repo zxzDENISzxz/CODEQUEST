@@ -8,6 +8,7 @@ import { LevelSelect } from './components/LevelSelect'
 import { CommandCounter, calcStars } from './components/CommandCounter'
 import { parseCommands } from './core/CommandParser'
 import { runCommands, countCommands } from './core/GameEngine'
+import { playMove, playTurn, playWin, playFail, playClick, setMuted } from './core/sounds'
 import { levels } from './levels/index'
 import { useGameStore } from './store/gameStore'
 import type { GameState, Position, GameEvent } from './core/GameEngine'
@@ -41,6 +42,7 @@ export default function App() {
   const [failedCommandIndex, setFailedCommandIndex] = useState<number | null>(null)
   const [lineExecCounts, setLineExecCounts] = useState<Record<number, number>>({})
   const [showFinalScreen, setShowFinalScreen] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
   const freshWinRef = useRef(false)
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export default function App() {
       return () => clearTimeout(t)
     }
   }, [visibleStatus, currentLevelIndex, animating])
+
 
   function getLevelState(index: number): GameState {
     return {
@@ -74,6 +77,7 @@ export default function App() {
       const event = events[i]
 
       if (event.type === 'move') {
+        playMove()
         setDisplayPos(event.position)
         setActiveCommandIndex(event.commandIndex)
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
@@ -81,6 +85,7 @@ export default function App() {
       }
 
       if (event.type === 'turn') {
+        playTurn()
         setCurrentRotation(r => r + 90)
         setActiveCommandIndex(event.commandIndex)
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
@@ -91,6 +96,7 @@ export default function App() {
       }
 
       if (event.type === 'win' || event.type === 'fail') {
+        event.type === 'win' ? playWin() : playFail()
         clearInterval(intervalRef.current!)
         intervalRef.current = null
         animationRef.current = false
@@ -324,23 +330,32 @@ export default function App() {
             failedCommandIndex={failedCommandIndex}
             lineExecCounts={lineExecCounts}
           />
-          <button
-            onClick={handleReset}
-            className="py-2 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
-          >
-            🔄 Сбросить
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { playClick(); handleReset() }}
+              className="flex-1 py-2 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
+            >
+              🔄 Сбросить
+            </button>
+            <button
+              onClick={() => { playClick(); const next = !isMuted; setMuted(next); setIsMuted(next) }}
+              className="py-2 px-3 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
+              title={isMuted ? 'Включить звук' : 'Выключить звук'}
+            >
+              {isMuted ? '🔇' : '🔊'}
+            </button>
+          </div>
           <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-indigo-700">
             <div className="flex gap-2">
               <button
-                onClick={handlePreviousLevel}
+                onClick={() => { playClick(); handlePreviousLevel() }}
                 disabled={currentLevelIndex === 0}
                 className="flex-1 py-2 rounded-lg bg-indigo-700 text-white hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 ← Назад
               </button>
               <button
-                onClick={handleNextLevel}
+                onClick={() => { playClick(); handleNextLevel() }}
                 disabled={currentLevelIndex === levels.length - 1 || visibleStatus !== 'win' || animating}
                 className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -348,7 +363,7 @@ export default function App() {
               </button>
             </div>
             <button
-              onClick={() => setScreen('select')}
+              onClick={() => { playClick(); setScreen('select') }}
               className="w-full py-2 rounded-lg bg-indigo-900 hover:bg-indigo-800 text-indigo-300 hover:text-white text-sm transition-colors cursor-pointer border border-indigo-700"
             >
               ← На карту секторов
