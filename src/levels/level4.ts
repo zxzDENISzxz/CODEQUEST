@@ -26,6 +26,6 @@ export const level4: LevelDef = {
     obstacleTheme: 'asteroid',
     GoalPlanet: PlanetEmbra,
     mapPosition: { x: 72, y: 15 },
-    mapColor: { color: '#f97316', glow: 'rgba(249,115,22,0.40)' },
+    mapColor: { color: '#eab308', glow: 'rgba(234,179,8,0.50)' },
   },
 }
