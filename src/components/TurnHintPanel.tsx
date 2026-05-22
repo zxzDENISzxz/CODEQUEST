@@ -44,7 +44,7 @@ function MiniPlanet() {
 
 export function TurnHintPanel() {
   const [hovered, setHovered] = useState(false)
-  const [shipX,   setShipX]   = useState(0)
+  const [shipX,   setShipX]   = useState(1)
   const [shipY,   setShipY]   = useState(0)
   const [dir,     setDir]     = useState<Dir>('right')
   const [typed,   setTyped]   = useState('')
@@ -59,14 +59,14 @@ export function TurnHintPanel() {
   useEffect(() => {
     if (!hovered) {
       cancelRef.current = true
-      setShipX(0); setShipY(0); setDir('right'); setTyped('')
+      setShipX(1); setShipY(0); setDir('right'); setTyped('')
       return
     }
     cancelRef.current = false
 
     const run = async () => {
       while (!cancelRef.current) {
-        setShipX(0); setShipY(0); setDir('right'); setTyped('')
+        setShipX(1); setShipY(0); setDir('right'); setTyped('')
         await wait(600)
 
         // turn → смотрим вниз
@@ -79,7 +79,7 @@ export function TurnHintPanel() {
         setDir('down'); setTyped('')
         await wait(380)
 
-        // move → идём вниз (0,1)
+        // move → идём вниз (1,1)
         for (const ch of 'move') {
           if (cancelRef.current) return
           setTyped(p => p + ch); await wait(120)
@@ -89,24 +89,24 @@ export function TurnHintPanel() {
         setShipY(1); setTyped('')
         await wait(380)
 
-        // turn → смотрим вправо
+        // turn → смотрим влево
         for (const ch of 'turn') {
           if (cancelRef.current) return
           setTyped(p => p + ch); await wait(120)
         }
         await wait(380)
         if (cancelRef.current) return
-        setDir('right'); setTyped('')
+        setDir('left'); setTyped('')
         await wait(380)
 
-        // move → идём вправо (1,1) — цель
+        // move → идём влево (0,1) — цель
         for (const ch of 'move') {
           if (cancelRef.current) return
           setTyped(p => p + ch); await wait(120)
         }
         await wait(380)
         if (cancelRef.current) return
-        setShipX(1); setTyped('')
+        setShipX(0); setTyped('')
         await wait(1000)
       }
     }
@@ -161,7 +161,7 @@ export function TurnHintPanel() {
                     width: CELL, height: CELL, background: '#1e1b4b',
                     borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    {x === 1 && y === 1 && <MiniPlanet />}
+                    {x === 0 && y === 1 && <MiniPlanet />}
                   </div>
                 ))}
 
