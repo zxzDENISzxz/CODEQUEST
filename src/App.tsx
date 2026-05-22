@@ -320,7 +320,7 @@ export default function App() {
               </div>
             )}
             {!animating && visibleStatus === 'fail' && (
-              <div className="w-full text-center text-xl font-bold text-red-400">
+              <div className="whitespace-nowrap text-center text-2xl font-bold text-red-400">
                 💥 Навигационный сбой. Повтори.
               </div>
             )}
