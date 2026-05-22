@@ -1,12 +1,14 @@
 import type { LevelDef } from '../core/types'
 import { PlanetNox } from '../components/GoalPlanets'
 
+const FUEL = 8;
+
 export const level5: LevelDef = {
   state: {
     player: { x: 0, y: 0 },
     goal:   { x: 4, y: 4 },
     direction: 'right',
-    fuel: 14,
+    fuel: FUEL,
     grid: [
       ['empty', 'empty', 'empty', 'wall',  'empty'],
       ['empty', 'wall',  'empty', 'wall',  'empty'],
@@ -19,8 +21,8 @@ export const level5: LevelDef = {
     id: 5,
     title: 'Серая зона',
     description: 'Обломки старых кораблей. Нокс почти не видна в помехах.',
-    hint: 'Сложный рельеф. Можно вкладывать repeat внутрь repeat.\nТоплива: 14.',
-    minCommands: 13,
+    hint: `Сложный рельеф. Можно вкладывать repeat внутрь repeat.\nТоплива: ${FUEL}.`,
+    minCommands: 8,
   },
   visual: {
     obstacleTheme: 'debris',

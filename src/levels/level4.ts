@@ -1,12 +1,14 @@
 import type { LevelDef } from '../core/types'
 import { PlanetEmbra } from '../components/GoalPlanets'
 
+const FUEL = 8;
+
 export const level4: LevelDef = {
   state: {
     player: { x: 0, y: 0 },
     goal:   { x: 2, y: 2 },
     direction: 'right',
-    fuel: 16,
+    fuel: FUEL,
     grid: [
       ['empty', 'empty', 'empty', 'empty', 'empty'],
       ['empty', 'wall',  'wall',  'empty', 'empty'],
@@ -19,11 +21,11 @@ export const level4: LevelDef = {
     id: 4,
     title: 'Разлом Кеола',
     description: 'Плотный астероидный пояс. Эмбра где-то внутри.',
-    hint: 'Маршрут неоднозначен. Комбинируй move, turn, repeat.\nТоплива: 16.',
+    hint: `Маршрут неоднозначен. Комбинируй move, turn, repeat.\nТоплива: ${FUEL}.`,
     minCommands: 7,
   },
   visual: {
-    obstacleTheme: 'asteroid',
+    obstacleTheme: 'debris',
     GoalPlanet: PlanetEmbra,
     mapPosition: { x: 72, y: 15 },
     mapColor: { color: '#f97316', glow: 'rgba(249,115,22,0.40)' },

@@ -2,12 +2,14 @@ import type { LevelDef } from '../core/types'
 import { PlanetPixo } from '../components/GoalPlanets'
 import { MoveHintPanel } from '../components/MoveHintPanel'
 
+const FUEL = 4;
+
 export const level1: LevelDef = {
   state: {
     player: { x: 0, y: 0 },
     goal:   { x: 4, y: 0 },
     direction: 'right',
-    fuel: 4,
+    fuel: FUEL,
     grid: [
       ['empty', 'empty', 'empty', 'empty', 'empty'],
     ],
@@ -16,7 +18,7 @@ export const level1: LevelDef = {
     id: 1,
     title: 'Туманность Веги',
     description: 'Зикс входит в первый сектор. Планета Пиксо виднеется вдали.',
-    hint: 'Топлива: 4 единицы. Один манёвр — минус одно деление.\nКоманда: move',
+    hint: `Топлива: ${FUEL} единицы. Один манёвр — минус одно деление.\nКоманда: move`,
     minCommands: 2,
   },
   visual: {
