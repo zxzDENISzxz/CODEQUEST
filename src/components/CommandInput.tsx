@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
+import { playClick } from '../core/sounds'
 
 interface Props {
   onRun: (code: string) => void
@@ -95,7 +96,7 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
       </div>
 
       <button
-        onClick={() => onRun(code)}
+        onClick={() => { playClick(); onRun(code) }}
         disabled={disabled}
         className="
           py-3 rounded-lg font-bold text-lg
@@ -107,7 +108,7 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
         ▶ Запустить
       </button>
       <button
-        onClick={() => onCodeChange('')}
+        onClick={() => { playClick(); onCodeChange('') }}
         className="py-2 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
       >
         Очистить

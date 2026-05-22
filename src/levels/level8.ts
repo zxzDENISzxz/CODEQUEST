@@ -2,7 +2,7 @@ import { parseGrid } from '../core/types'
 import type { LevelDef } from '../core/types'
 import { PlanetAruma } from '../components/GoalPlanets'
 
-const FUEL = 8;
+const FUEL = 15;
 
 export const level8: LevelDef = {
   state: {
