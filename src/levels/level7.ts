@@ -2,16 +2,17 @@ import { parseGrid } from '../core/types'
 import type { LevelDef } from '../core/types'
 import { PlanetDrax } from '../components/GoalPlanets'
 
-const FUEL = 8;
+const FUEL = 14;
 
 export const level7: LevelDef = {
   state: {
     ...parseGrid([
-      ['player', 'empty', 'wall',  'empty', 'empty'],
-      ['wall',   'empty', 'wall',  'empty', 'wall' ],
-      ['wall',   'empty', 'empty', 'empty', 'empty'],
-      ['wall',   'empty', 'empty', 'wall',  'empty'],
-      ['empty',  'empty', 'empty', 'empty', 'goal' ],
+      ['player', 'empty', 'wall',  'empty', 'empty', 'empty'],
+      ['wall',   'empty', 'wall',  'empty', 'wall',  'empty'],
+      ['wall',   'empty', 'empty', 'empty', 'wall',  'empty'],
+      ['empty',  'empty', 'empty', 'wall',  'empty', 'empty'],
+      ['empty',  'wall',  'wall',  'empty', 'empty', 'empty'],
+      ['empty',  'empty', 'empty', 'empty', 'wall',  'goal'],
     ]),
     direction: 'right',
     fuel: FUEL,

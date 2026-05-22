@@ -3,16 +3,15 @@ import type { LevelDef } from '../core/types'
 import { PlanetTivo } from '../components/GoalPlanets'
 import { RepeatHintPanel } from '../components/RepeatHintPanel'
 
-const FUEL = 4;
+const FUEL = 3;
 
 export const level3: LevelDef = {
   state: {
     ...parseGrid([
-      ['empty',  'wall',  'empty', 'wall',  'empty'],
-      ['wall',   'empty', 'wall',  'empty', 'wall' ],
-      ['player', 'empty', 'empty', 'empty', 'goal' ],
-      ['empty',  'wall',  'empty', 'wall',  'empty'],
-      ['wall',   'empty', 'wall',  'empty', 'wall' ],
+      ['empty',  'empty', 'empty',  'wall'],
+      ['wall',   'empty', 'wall',  'empty'],
+      ['player', 'empty', 'empty', 'goal' ],
+      ['empty',  'wall',  'empty',  'wall'],
     ]),
     direction: 'right',
     fuel: FUEL,
