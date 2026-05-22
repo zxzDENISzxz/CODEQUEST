@@ -1,3 +1,4 @@
+import { parseGrid } from '../core/types'
 import type { LevelDef } from '../core/types'
 import { PlanetEmbra } from '../components/GoalPlanets'
 
@@ -5,17 +6,15 @@ const FUEL = 8;
 
 export const level4: LevelDef = {
   state: {
-    player: { x: 0, y: 0 },
-    goal:   { x: 2, y: 2 },
+    ...parseGrid([
+      ['player', 'empty', 'empty', 'empty', 'empty'],
+      ['empty',  'wall',  'wall',  'empty', 'empty'],
+      ['empty',  'wall',  'goal',  'empty', 'empty'],
+      ['empty',  'wall',  'empty', 'wall',  'empty'],
+      ['empty',  'empty', 'empty', 'wall',  'empty'],
+    ]),
     direction: 'right',
     fuel: FUEL,
-    grid: [
-      ['empty', 'empty', 'empty', 'empty', 'empty'],
-      ['empty', 'wall',  'wall',  'empty', 'empty'],
-      ['empty', 'wall',  'empty', 'empty', 'empty'],
-      ['empty', 'wall',  'empty', 'wall',  'empty'],
-      ['empty', 'empty', 'empty', 'wall',  'empty'],
-    ],
   },
   meta: {
     id: 4,

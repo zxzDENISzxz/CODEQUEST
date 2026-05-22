@@ -1,3 +1,4 @@
+import { parseGrid } from '../core/types'
 import type { LevelDef } from '../core/types'
 import { PlanetPixo } from '../components/GoalPlanets'
 import { MoveHintPanel } from '../components/MoveHintPanel'
@@ -6,13 +7,11 @@ const FUEL = 4;
 
 export const level1: LevelDef = {
   state: {
-    player: { x: 0, y: 0 },
-    goal:   { x: 4, y: 0 },
+    ...parseGrid([
+      ['player', 'empty', 'empty', 'empty', 'goal'],
+    ]),
     direction: 'right',
     fuel: FUEL,
-    grid: [
-      ['empty', 'empty', 'empty', 'empty', 'empty'],
-    ],
   },
   meta: {
     id: 1,

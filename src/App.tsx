@@ -266,6 +266,7 @@ export default function App() {
       <div className="flex gap-12 items-start">
         <div className="flex flex-col gap-4 w-[336px]">
           <GameGrid
+            key={currentLevelIndex}
             grid={state.grid}
             player={displayPos}
             goal={state.goal}

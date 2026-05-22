@@ -1,3 +1,4 @@
+import { parseGrid } from '../core/types'
 import type { LevelDef } from '../core/types'
 import { PlanetNox } from '../components/GoalPlanets'
 
@@ -5,17 +6,15 @@ const FUEL = 8;
 
 export const level5: LevelDef = {
   state: {
-    player: { x: 0, y: 0 },
-    goal:   { x: 4, y: 4 },
+    ...parseGrid([
+      ['player', 'empty', 'empty', 'wall',  'empty'],
+      ['empty',  'wall',  'empty', 'wall',  'empty'],
+      ['empty',  'wall',  'empty', 'empty', 'empty'],
+      ['empty',  'wall',  'wall',  'wall',  'empty'],
+      ['empty',  'empty', 'wall',  'empty', 'goal' ],
+    ]),
     direction: 'right',
     fuel: FUEL,
-    grid: [
-      ['empty', 'empty', 'empty', 'wall',  'empty'],
-      ['empty', 'wall',  'empty', 'wall',  'empty'],
-      ['empty', 'wall',  'empty', 'empty', 'empty'],
-      ['empty', 'wall',  'wall',  'wall',  'empty'],
-      ['empty', 'empty', 'wall',  'empty', 'empty'],
-    ],
   },
   meta: {
     id: 5,
