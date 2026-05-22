@@ -9,7 +9,7 @@ import { LevelSelect } from './components/LevelSelect'
 import { CommandCounter, calcStars } from './components/CommandCounter'
 import { parseCommands } from './core/CommandParser'
 import { runCommands, countCommands } from './core/GameEngine'
-import { startThruster, stopThruster, playTurn, playWin, playFail, playClick, setMuted } from './core/sounds'
+import { startThruster, stopThruster, playTurn, playWin, playFail, playClick, setMuted, initBackgroundMusic, playBackgroundMusic, stopBackgroundMusic } from './core/sounds'
 import { levels } from './levels/index'
 import { useGameStore } from './store/gameStore'
 import type { GameState, Position, GameEvent } from './core/GameEngine'
@@ -56,6 +56,16 @@ export default function App() {
     }
   }, [visibleStatus, currentLevelIndex, animating])
 
+  // Инициализация и управление фоновой музыкой
+  useEffect(() => {
+    initBackgroundMusic()
+    
+    if (screen === 'game') {
+      playBackgroundMusic()
+    } else {
+      stopBackgroundMusic()
+    }
+  }, [screen])
 
   function getLevelState(index: number): GameState {
     return {
