@@ -286,9 +286,9 @@ export default function App() {
             <span className="text-indigo-500">/ {currentLevel.state.fuel}</span>
           </div>
 
-          <div className="min-h-[96px] flex flex-col items-center justify-center gap-2 overflow-hidden" style={{ width: gridWidth }}>
+          <div className="min-h-[96px] flex flex-col items-center justify-center gap-2" style={{ width: gridWidth }}>
             {!animating && visibleStatus === 'win' && (
-              <div className="w-full text-center text-2xl font-bold text-green-400">
+              <div className="whitespace-nowrap text-center text-2xl font-bold text-green-400">
                 🪐 Планета достигнута!
               </div>
             )}
