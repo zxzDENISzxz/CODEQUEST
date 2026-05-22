@@ -30,9 +30,6 @@ const THEME_BG: Record<Theme, string> = {
   nebula:   '#1e1b4b',
 }
 
-function cellSeed(x: number, y: number): number {
-  return ((x * 7 + y * 13 + x * y * 3 + 17) % 97) / 97
-}
 
 // ─── Астероид ───────────────────────────────────────────────
 function Asteroid({ s }: { s: number }) {
@@ -192,9 +189,7 @@ function Nebula({ s }: { s: number }) {
 }
 
 // ─── Выбор препятствия ────────────────────────────────────────
-function WallObstacle({ x, y, theme }: { x: number; y: number; theme: Theme }) {
-  const s = cellSeed(x, y)
-  // Сектор Буря (level 6): хаотичный микс обломков и астероидов
+function WallObstacle({ s, theme }: { s: number; theme: Theme }) {
   const actual: Theme = theme === 'debris' && s > 0.55 ? 'asteroid' : theme
 
   switch (actual) {
@@ -245,6 +240,14 @@ function ShipSVG({ animating = false }: { animating?: boolean }) {
 export function GameGrid({ grid, player, goal, teleporting = false, rotation = 0, obstacleTheme = 'asteroid', GoalPlanet, animating = false }: Props) {
   const theme = obstacleTheme
 
+  const [wallSeeds] = useState<Record<string, number>>(() => {
+    const seeds: Record<string, number> = {}
+    grid.forEach((row, y) => row.forEach((cell, x) => {
+      if (cell === 'wall') seeds[`${x}-${y}`] = Math.random()
+    }))
+    return seeds
+  })
+
   const [trail, setTrail] = useState<TrailDot[]>([])
   const trailId = useRef(0)
   const prevPlayer = useRef(player)
@@ -279,7 +282,7 @@ export function GameGrid({ grid, player, goal, teleporting = false, rotation = 0
                 backgroundColor: isWall ? THEME_BG[theme] : '#312e81',
               }}
             >
-              {isWall && <WallObstacle x={x} y={y} theme={theme} />}
+              {isWall && <WallObstacle s={wallSeeds[`${x}-${y}`] ?? 0.5} theme={theme} />}
               {isGoal && GoalPlanet && <div className="z-10"><GoalPlanet /></div>}
             </div>
           )
