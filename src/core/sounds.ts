@@ -274,13 +274,14 @@ export function playArrival(): void {
 
 // ─── Фоновая музыка ─────────────────────────────────────────
 let bgmAudio: HTMLAudioElement | null = null
+const volume = 0.08
 
 export function initBackgroundMusic(): void {
   if (bgmAudio) return
   
   bgmAudio = new Audio('/sound/background_music.mp3')
   bgmAudio.loop = true
-  bgmAudio.volume = 0.15 // Тихо чтобы не перекрывать звуки игры
+  bgmAudio.volume = volume // Тихо чтобы не перекрывать звуки игры
 }
 
 export function playBackgroundMusic(): void {
@@ -290,7 +291,7 @@ export function playBackgroundMusic(): void {
   if (muted) {
     bgmAudio.volume = 0
   } else {
-    bgmAudio.volume = 0.15
+    bgmAudio.volume = volume
   }
   
   if (bgmAudio.paused) {
@@ -307,5 +308,5 @@ export function stopBackgroundMusic(): void {
 
 export function updateBackgroundMusicVolume(): void {
   if (!bgmAudio) return
-  bgmAudio.volume = muted ? 0 : 0.15
+  bgmAudio.volume = muted ? 0 : volume
 }
