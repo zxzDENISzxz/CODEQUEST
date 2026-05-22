@@ -115,6 +115,7 @@ export default function App() {
   const currentLevel = levels[currentLevelIndex]
   const meta = currentLevel.meta
   const currentCode = levelCodes[currentLevelIndex] ?? ''
+  const gridWidth = state.grid[0].length * 64 + (state.grid[0].length - 1) * 4
 
   function handleCodeChange(code: string) {
     useGameStore.getState().setCode(currentLevelIndex, code)
@@ -263,8 +264,8 @@ export default function App() {
         <p className="text-indigo-400 text-sm mt-1">{meta.description}</p>
       </div>
 
-      <div className="flex gap-12 items-start">
-        <div className="flex flex-col gap-4 w-[336px]">
+      <div className="grid gap-12 items-start w-full max-w-4xl" style={{ gridTemplateColumns: '1fr auto' }}>
+        <div className="flex flex-col gap-4 items-center">
           <GameGrid
             key={currentLevelIndex}
             grid={state.grid}
@@ -285,14 +286,14 @@ export default function App() {
             <span className="text-indigo-500">/ {currentLevel.state.fuel}</span>
           </div>
 
-          <div className="h-24 flex flex-col items-center justify-center gap-2">
+          <div className="min-h-[96px] flex flex-col items-center justify-center gap-2 overflow-hidden" style={{ width: gridWidth }}>
             {!animating && visibleStatus === 'win' && (
-              <div className="text-center text-2xl font-bold text-green-400">
+              <div className="w-full text-center text-2xl font-bold text-green-400">
                 🪐 Планета достигнута!
               </div>
             )}
             {!animating && visibleStatus === 'fail' && (
-              <div className="text-center text-2xl font-bold text-red-400">
+              <div className="w-full text-center text-xl font-bold text-red-400">
                 💥 Навигационный сбой. Повтори.
               </div>
             )}

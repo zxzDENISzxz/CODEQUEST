@@ -70,12 +70,17 @@ function Asteroid({ s }: { s: number }) {
 // ─── Ледяной кристалл ────────────────────────────────────────
 function IceCrystal({ s }: { s: number }) {
   const pulseDur = 2.5 + s * 2
+  const rotateDur = 14 + s * 12
   const delay = s * 1.5
-  const tilt = (s - 0.5) * 22
 
   return (
     <motion.div
-      style={{ width: 48, height: 48, rotate: tilt }}
+      style={{ width: 48, height: 48 }}
+      animate={{ rotate: [0, 360] }}
+      transition={{ duration: rotateDur, repeat: Infinity, ease: 'linear' }}
+    >
+    <motion.div
+      style={{ width: 48, height: 48 }}
       animate={{ scale: [1, 1.08, 1], opacity: [0.72, 1, 0.72] }}
       transition={{ duration: pulseDur, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut', delay }}
     >
@@ -92,6 +97,7 @@ function IceCrystal({ s }: { s: number }) {
         <circle cx="24" cy="8" r="1.2" fill="white" opacity="0.8"/>
       </svg>
     </motion.div>
+    </motion.div>
   )
 }
 
@@ -101,8 +107,10 @@ function Debris({ s }: { s: number }) {
   const d2 = 3 + (1 - s) * 2
   const d3 = 2 + s * 1.8
 
+  const baseAngle = Math.round(s * 360)
+
   return (
-    <div style={{ width: 52, height: 52, position: 'relative' }}>
+    <div style={{ width: 52, height: 52, position: 'relative', transform: `rotate(${baseAngle}deg)` }}>
       {/* Обломок панели */}
       <motion.div
         style={{ position: 'absolute', top: 7, left: 5 }}

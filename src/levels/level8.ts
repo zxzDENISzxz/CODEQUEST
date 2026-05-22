@@ -29,6 +29,6 @@ export const level8: LevelDef = {
     obstacleTheme: 'debris',
     GoalPlanet: PlanetAruma,
     mapPosition: { x: 54, y: 82 },
-    mapColor: { color: '#fbbf24', glow: 'rgba(251,191,36,0.55)' },
+    mapColor: { color: '#a78bfa', glow: 'rgba(167,139,250,0.55)' },
   },
 }
