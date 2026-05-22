@@ -52,14 +52,14 @@ export function PlanetEmbra() {
   return (
     <motion.svg width="44" height="44" viewBox="0 0 44 44" fill="none"
       animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}>
-      <circle cx="22" cy="22" r="19" fill="#dc2626" opacity="0.12"/>
-      <circle cx="22" cy="22" r="15" fill="#7f1d1d"/>
-      <circle cx="22" cy="22" r="15" fill="#991b1b"/>
-      <ellipse cx="19" cy="17" rx="8" ry="5" fill="#dc2626" opacity="0.6" transform="rotate(-20 19 17)"/>
-      <ellipse cx="26" cy="27" rx="6" ry="4" fill="#b91c1c" opacity="0.55" transform="rotate(8 26 27)"/>
-      <path d="M18 13 L22 22 L19 31" stroke="#450a0a" strokeWidth="1.2" opacity="0.7"/>
-      <path d="M27 15 L24 22 L28 29" stroke="#450a0a" strokeWidth="1"   opacity="0.6"/>
-      <circle cx="22" cy="22" r="15" fill="none" stroke="#ef4444" strokeWidth="1.2" opacity="0.42"/>
+      <circle cx="22" cy="22" r="19" fill="#d6b625" opacity="0.12"/>
+      <circle cx="22" cy="22" r="15" fill="#e68b14"/>
+      <circle cx="22" cy="22" r="15" fill="#bd9d35"/>
+      <ellipse cx="19" cy="17" rx="8" ry="5" fill="#ddba1b" opacity="0.6" transform="rotate(-20 19 17)"/>
+      <ellipse cx="26" cy="27" rx="6" ry="4" fill="#e4d65c" opacity="0.55" transform="rotate(8 26 27)"/>
+      <path d="M18 13 L22 22 L19 31" stroke="#9c6717" strokeWidth="1.2" opacity="0.7"/>
+      <path d="M27 15 L24 22 L28 29" stroke="#775a1b" strokeWidth="1"   opacity="0.6"/>
+      <circle cx="22" cy="22" r="15" fill="none" stroke="#f09610" strokeWidth="1.2" opacity="0.42"/>
       <ellipse cx="16" cy="14" rx="5" ry="3" fill="white" opacity="0.05"/>
     </motion.svg>
   )

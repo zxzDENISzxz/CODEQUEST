@@ -7,11 +7,13 @@ const FUEL = 8;
 export const level8: LevelDef = {
   state: {
     ...parseGrid([
-      ['player', 'empty', 'empty', 'empty', 'empty'],
-      ['empty',  'wall',  'wall',  'wall',  'empty'],
-      ['empty',  'wall',  'empty', 'wall',  'empty'],
-      ['empty',  'empty', 'empty', 'wall',  'empty'],
-      ['empty',  'wall',  'empty', 'empty', 'goal' ],
+      ['player', 'empty', 'empty', 'empty', 'empty', 'empty', 'wall' ],
+      ['empty',  'empty', 'wall',  'wall',  'empty', 'empty', 'empty'],
+      ['empty',  'wall',  'goal',  'empty', 'wall',  'empty', 'empty'],
+      ['empty',  'empty', 'wall',  'empty', 'empty', 'empty', 'wall' ],
+      ['empty',  'wall',  'empty', 'wall',  'wall',  'empty', 'empty'],
+      ['empty',  'empty', 'wall',  'empty', 'empty', 'wall',  'empty'],
+      ['wall',   'empty', 'empty', 'empty', 'empty', 'empty', 'empty'],
     ]),
     direction: 'right',
     fuel: FUEL,
@@ -24,7 +26,7 @@ export const level8: LevelDef = {
     minCommands: 4,
   },
   visual: {
-    obstacleTheme: 'asteroid',
+    obstacleTheme: 'debris',
     GoalPlanet: PlanetAruma,
     mapPosition: { x: 54, y: 82 },
     mapColor: { color: '#fbbf24', glow: 'rgba(251,191,36,0.55)' },

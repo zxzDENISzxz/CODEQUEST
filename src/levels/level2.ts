@@ -3,16 +3,14 @@ import type { LevelDef } from '../core/types'
 import { PlanetRufa } from '../components/GoalPlanets'
 import { TurnHintPanel } from '../components/TurnHintPanel'
 
-const FUEL = 16;
+const FUEL = 6;
 
 export const level2: LevelDef = {
   state: {
     ...parseGrid([
-      ['player', 'wall',  'empty', 'empty', 'goal' ],
-      ['empty',  'wall',  'empty', 'wall',  'wall' ],
-      ['empty',  'wall',  'empty', 'empty', 'empty'],
-      ['empty',  'wall',  'wall',  'wall',  'empty'],
-      ['empty',  'empty', 'empty', 'empty', 'empty'],
+      ['player', 'wall',   'goal'],
+      ['empty',  'wall',  'empty'],
+      ['empty',  'empty', 'empty'],
     ]),
     direction: 'right',
     fuel: FUEL,
@@ -22,7 +20,7 @@ export const level2: LevelDef = {
     title: 'Пояс Дарна',
     description: 'Первые астероиды. Прямой курс на Руфу заблокирован.',
     hint: `Препятствия обнаружены. turn — поворот 90°. move — манёвр.\nТоплива: ${FUEL}.`,
-    minCommands: 14,
+    minCommands: 8,
   },
   visual: {
     obstacleTheme: 'asteroid',
