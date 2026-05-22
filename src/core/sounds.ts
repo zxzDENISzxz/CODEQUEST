@@ -7,7 +7,10 @@ function getCtx(): AudioContext {
   return ctx
 }
 
-export function setMuted(value: boolean): void { muted = value }
+export function setMuted(value: boolean): void { 
+  muted = value 
+  updateBackgroundMusicVolume()
+}
 export function getMuted(): boolean { return muted }
 
 let thrusterNodes: { noise: AudioBufferSourceNode; gain: GainNode } | null = null
@@ -267,4 +270,42 @@ export function playArrival(): void {
     osc.start(s)
     osc.stop(s + dur + 0.1)
   })
+}
+
+// ─── Фоновая музыка ─────────────────────────────────────────
+let bgmAudio: HTMLAudioElement | null = null
+
+export function initBackgroundMusic(): void {
+  if (bgmAudio) return
+  
+  bgmAudio = new Audio('/sound/background_music.mp3')
+  bgmAudio.loop = true
+  bgmAudio.volume = 0.15 // Тихо чтобы не перекрывать звуки игры
+}
+
+export function playBackgroundMusic(): void {
+  if (!bgmAudio) initBackgroundMusic()
+  if (!bgmAudio) return
+  
+  if (muted) {
+    bgmAudio.volume = 0
+  } else {
+    bgmAudio.volume = 0.15
+  }
+  
+  if (bgmAudio.paused) {
+    bgmAudio.currentTime = 0
+    bgmAudio.play().catch(() => {})
+  }
+}
+
+export function stopBackgroundMusic(): void {
+  if (!bgmAudio) return
+  bgmAudio.pause()
+  bgmAudio.currentTime = 0
+}
+
+export function updateBackgroundMusicVolume(): void {
+  if (!bgmAudio) return
+  bgmAudio.volume = muted ? 0 : 0.15
 }

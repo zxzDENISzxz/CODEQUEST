@@ -155,7 +155,7 @@ export function RepeatHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
         background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
         padding: '10px 12px', fontFamily: 'monospace', fontSize: 14, lineHeight: 1.7, minHeight: 72,
       }}>
-        {FULL_LINES.map((fullLine, li) => {
+        {FULL_LINES.map((_, li) => {
           const printed = lines[li] ?? ''
           if (!printed && li > (lines.length - 1)) return null
           const isLast = li === lastLineIdx
