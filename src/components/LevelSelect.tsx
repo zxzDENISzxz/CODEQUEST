@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { StarBackground } from './StarBackground'
 import { ShipSVG } from './GameGrid'
+import { playClick } from '../core/sounds'
 import type { LevelDef } from '../core/types'
 
 interface Props {
@@ -198,7 +199,7 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
 
       {/* Кнопка-нода */}
       <motion.button
-        onClick={() => !isLocked && onSelect()}
+        onClick={() => { if (!isLocked) { playClick(); onSelect() } }}
         disabled={isLocked}
         animate={hovered && !isLocked ? { scale: 1.18 } : { scale: 1 }}
         transition={{ type: 'spring', stiffness: 320, damping: 18 }}
