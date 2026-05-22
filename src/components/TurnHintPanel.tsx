@@ -39,14 +39,15 @@ function MiniPlanet() {
   )
 }
 
-export function TurnHintPanel() {
-  const [hovered, setHovered] = useState(false)
-  const [shipX,     setShipX]    = useState(0)
-  const [shipY,     setShipY]    = useState(0)
-  const [rotation,  setRotation] = useState(0)
-  const [typed,   setTyped]   = useState('')
-  const [cursor,  setCursor]  = useState(true)
+export function TurnHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
+  const [open,     setOpen]     = useState(false)
+  const [shipX,    setShipX]    = useState(0)
+  const [shipY,    setShipY]    = useState(0)
+  const [rotation, setRotation] = useState(0)
+  const [typed,    setTyped]    = useState('')
+  const [cursor,   setCursor]   = useState(true)
   const cancelRef = useRef(false)
+  const active = open || autoPlay
 
   useEffect(() => {
     const id = setInterval(() => setCursor(c => !c), 530)
@@ -54,135 +55,109 @@ export function TurnHintPanel() {
   }, [])
 
   useEffect(() => {
-    if (!hovered) {
+    if (!active) {
       cancelRef.current = true
       setShipX(0); setShipY(0); setRotation(0); setTyped('')
       return
     }
     cancelRef.current = false
-
     const run = async () => {
       while (!cancelRef.current) {
         setShipX(0); setShipY(0); setRotation(0); setTyped('')
         await wait(600)
-
-        // turn → вниз (+90)
         for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
         await wait(380); if (cancelRef.current) return
         setRotation(r => r + 90); setTyped(''); await wait(380)
-
-        // move → (0,1)
         for (const ch of 'move') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
         await wait(380); if (cancelRef.current) return
         setShipY(1); setTyped(''); await wait(380)
-
-        // turn → влево (+90)
         for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
         await wait(380); if (cancelRef.current) return
         setRotation(r => r + 90); setTyped(''); await wait(380)
-
-        // turn → вверх (+90)
         for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
         await wait(380); if (cancelRef.current) return
         setRotation(r => r + 90); setTyped(''); await wait(380)
-
-        // turn → вправо (+90)
         for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
         await wait(380); if (cancelRef.current) return
         setRotation(r => r + 90); setTyped(''); await wait(380)
-
-        // move → (1,1) — цель
         for (const ch of 'move') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
         await wait(380); if (cancelRef.current) return
         setShipX(1); setTyped(''); await wait(1000)
       }
     }
-
     run()
     return () => { cancelRef.current = true }
-  }, [hovered])
+  }, [active])
+
+  const body = (
+    <div style={{
+      padding: '16px 14px 14px',
+      background: 'rgba(15,12,40,0.88)',
+      border: '1px solid rgba(99,102,241,0.35)',
+      borderTop: autoPlay ? undefined : 'none',
+      borderRadius: autoPlay ? 10 : '0 0 10px 10px',
+    }}>
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: `${CELL}px ${CELL}px`, gap: GAP, marginBottom: 14, width: 'fit-content' }}>
+        {([0,0,1,0,0,1,1,1] as number[]).reduce<[number,number][]>((acc,_,i,a) =>
+          i % 2 === 0 ? [...acc, [a[i], a[i+1]]] : acc, []
+        ).map(([x, y]) => (
+          <div key={`${x}-${y}`} style={{
+            width: CELL, height: CELL, background: '#1e1b4b',
+            borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {x === 1 && y === 1 && <MiniPlanet />}
+          </div>
+        ))}
+        <motion.div
+          style={{
+            position: 'absolute', top: 0, left: 0, width: CELL, height: CELL,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none',
+          }}
+          animate={{ x: shipX * (CELL + GAP), y: shipY * (CELL + GAP) }}
+          transition={{ type: 'tween', duration: 0.28, ease: 'easeInOut' }}
+        >
+          <MiniShip rotation={rotation} />
+        </motion.div>
+      </div>
+      <div style={{
+        background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
+        padding: '8px 12px', fontFamily: 'monospace', fontSize: 15,
+        minHeight: 38, display: 'flex', alignItems: 'center',
+      }}>
+        <span style={{ color: '#fb923c' }}>{typed}</span>
+        <span style={{ display: 'inline-block', width: 2, height: 16, background: cursor ? '#fb923c' : 'transparent', marginLeft: 1 }} />
+      </div>
+      <p style={{ color: '#4b5563', fontSize: 11, marginTop: 8, fontFamily: 'monospace' }}>
+        <span style={{ color: '#fb923c' }}>turn</span> — поворот на 90° по часовой стрелке
+      </p>
+    </div>
+  )
+
+  if (autoPlay) return <div>{body}</div>
 
   return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '8px 14px',
-        background: hovered ? 'rgba(30,27,75,0.7)' : 'rgba(30,27,75,0.45)',
-        border: '1px solid rgba(99,102,241,0.35)',
-        borderRadius: hovered ? '10px 10px 0 0' : 10,
-        cursor: 'default', transition: 'background 0.2s, border-radius 0.15s',
-        userSelect: 'none',
-      }}>
+    <div>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
+          background: open ? 'rgba(30,27,75,0.7)' : 'rgba(30,27,75,0.45)',
+          border: '1px solid rgba(99,102,241,0.35)',
+          borderRadius: open ? '10px 10px 0 0' : 10,
+          cursor: 'pointer', transition: 'background 0.2s, border-radius 0.15s', userSelect: 'none',
+        }}
+      >
         <span style={{ fontSize: 13, color: '#fb923c' }}>↻</span>
         <span style={{ fontSize: 13, color: '#a5b4fc', fontWeight: 600 }}>
-          Как работает{' '}
-          <span style={{ color: '#fb923c', fontFamily: 'monospace' }}>turn</span>?
+          Как работает <span style={{ color: '#fb923c', fontFamily: 'monospace' }}>turn</span>?
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#4b5563' }}>
-          {hovered ? '▲' : '▼'}
-        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#4b5563' }}>{open ? '▲' : '▼'}</span>
       </div>
-
       <AnimatePresence initial={false}>
-        {hovered && (
-          <motion.div
-            key="demo"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div style={{
-              padding: '16px 14px 14px',
-              background: 'rgba(15,12,40,0.88)',
-              border: '1px solid rgba(99,102,241,0.35)',
-              borderTop: 'none', borderRadius: '0 0 10px 10px',
-            }}>
-              {/* 2×2 сетка */}
-              <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: `${CELL}px ${CELL}px`, gap: GAP, marginBottom: 14, width: 'fit-content' }}>
-                {([0,0,1,0,0,1,1,1] as number[]).reduce<[number,number][]>((acc,_,i,a) =>
-                  i % 2 === 0 ? [...acc, [a[i], a[i+1]]] : acc, []
-                ).map(([x, y]) => (
-                  <div key={`${x}-${y}`} style={{
-                    width: CELL, height: CELL, background: '#1e1b4b',
-                    borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {x === 1 && y === 1 && <MiniPlanet />}
-                  </div>
-                ))}
-
-                <motion.div
-                  style={{
-                    position: 'absolute', top: 0, left: 0,
-                    width: CELL, height: CELL,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }}
-                  animate={{ x: shipX * (CELL + GAP), y: shipY * (CELL + GAP) }}
-                  transition={{ type: 'tween', duration: 0.28, ease: 'easeInOut' }}
-                >
-                  <MiniShip rotation={rotation} />
-                </motion.div>
-              </div>
-
-              <div style={{
-                background: '#0f172a', border: '1px solid #334155',
-                borderRadius: 8, padding: '8px 12px',
-                fontFamily: 'monospace', fontSize: 15, minHeight: 38,
-                display: 'flex', alignItems: 'center',
-              }}>
-                <span style={{ color: '#fb923c' }}>{typed}</span>
-                <span style={{
-                  display: 'inline-block', width: 2, height: 16,
-                  background: cursor ? '#fb923c' : 'transparent', marginLeft: 1,
-                }} />
-              </div>
-
-              <p style={{ color: '#4b5563', fontSize: 11, marginTop: 8, fontFamily: 'monospace' }}>
-                <span style={{ color: '#fb923c' }}>turn</span> — поворот на 90° по часовой стрелке
-              </p>
-            </div>
+        {open && (
+          <motion.div key="demo" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} style={{ overflow: 'hidden' }}>
+            {body}
           </motion.div>
         )}
       </AnimatePresence>

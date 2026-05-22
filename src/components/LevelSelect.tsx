@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { StarBackground } from './StarBackground'
+import { ShipSVG } from './GameGrid'
 import type { LevelDef } from '../core/types'
 
 interface Props {
@@ -10,24 +11,6 @@ interface Props {
   onSelect: (index: number) => void
 }
 
-
-// ─── Корабль в заголовке ─────────────────────────────────────
-
-function TitleShip() {
-  return (
-    <svg width="38" height="38" viewBox="0 0 40 40" fill="none" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 6 }}>
-      <polygon points="36,20 8,10 8,30" fill="#93c5fd"/>
-      <polygon points="12,10 6,4 8,10"  fill="#60a5fa"/>
-      <polygon points="12,30 6,36 8,30" fill="#60a5fa"/>
-      <ellipse cx="19" cy="20" rx="7" ry="5" fill="#1e40af"/>
-      <circle  cx="21" cy="20" r="3.5"        fill="#0ea5e9"/>
-      <circle  cx="21" cy="20" r="2"           fill="#bae6fd"/>
-      <rect x="4" y="15" width="5" height="10" rx="2" fill="#475569"/>
-      <ellipse cx="3" cy="20" rx="2.5" ry="4"   fill="#fbbf24" opacity="0.85"/>
-      <ellipse cx="2" cy="20" rx="1.5" ry="2.5" fill="#fef08a" opacity="0.7"/>
-    </svg>
-  )
-}
 
 // ─── Журнал миссии ───────────────────────────────────────────
 
@@ -44,8 +27,8 @@ function MissionLog() {
           background: 'rgba(6,9,24,0.90)',
           border: '1px solid rgba(99,102,241,0.38)',
           borderRadius: open ? '10px 10px 0 0' : 10,
-          color: '#a5b4fc', fontSize: 14, fontWeight: 700,
-          letterSpacing: '0.14em', cursor: 'pointer', fontFamily: 'monospace',
+          color: '#a5b4fc', fontSize: 12, fontWeight: 700,
+          letterSpacing: '0.14em', cursor: 'pointer', fontFamily: "'Orbitron', sans-serif",
         }}
       >
         <motion.span
@@ -75,14 +58,14 @@ function MissionLog() {
               padding: '20px 22px 18px',
             }}>
               {/* Лор */}
-              <p style={{ color: '#e0e7ff', fontSize: 15, lineHeight: 1.7, marginBottom: 14 }}>
+              <p style={{ color: '#e0e7ff', fontSize: 14, lineHeight: 1.7, marginBottom: 14, fontFamily: "'Exo 2', sans-serif" }}>
                 Пилот <span style={{ color: '#fbbf24', fontWeight: 700 }}>Зикс</span> застрял
                 в дальнем космосе после аварии двигателя. Вместе с бортовым ИИ{' '}
                 <span style={{ color: '#60a5fa', fontWeight: 700 }}>БИПП</span> он
                 пробирается сквозь 8 опасных секторов к родной планете{' '}
                 <span style={{ color: '#a78bfa', fontWeight: 700 }}>Аруме</span>.
               </p>
-              <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+              <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, marginBottom: 16, fontFamily: "'Exo 2', sans-serif" }}>
                 Пиши команды для навигационной системы. Каждый манёвр расходует топливо — не дай ему кончиться.
               </p>
 
@@ -91,8 +74,8 @@ function MissionLog() {
 
               {/* Команды */}
               <div style={{
-                color: '#6b7280', fontSize: 13, letterSpacing: '0.14em',
-                fontFamily: 'monospace', marginBottom: 8,
+                color: '#6b7280', fontSize: 10, letterSpacing: '0.18em',
+                fontFamily: "'Orbitron', sans-serif", marginBottom: 8,
               }}>
                 КОМАНДЫ НАВИГАЦИИ
               </div>
@@ -253,11 +236,11 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
         ) : (
           <>
             <span style={{
-              fontSize: 10,
+              fontSize: 8,
               color: hovered ? theme.color : `${theme.color}90`,
               fontWeight: 700,
-              letterSpacing: '0.08em',
-              fontFamily: 'monospace',
+              letterSpacing: '0.1em',
+              fontFamily: "'Orbitron', sans-serif",
               lineHeight: 1,
             }}>
               СЕК
@@ -333,8 +316,8 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
               fontSize: 9,
               color: theme.color,
               fontWeight: 700,
-              letterSpacing: '0.14em',
-              fontFamily: 'monospace',
+              letterSpacing: '0.18em',
+              fontFamily: "'Orbitron', sans-serif",
               marginBottom: 7,
             }}>
               СЕКТОР {index + 1}
@@ -343,9 +326,10 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
             <div style={{
               color: 'white',
               fontWeight: 700,
-              fontSize: 14,
+              fontSize: 13,
               lineHeight: 1.25,
               marginBottom: 7,
+              fontFamily: "'Orbitron', sans-serif",
             }}>
               {level.meta.title}
             </div>
@@ -355,6 +339,7 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
               fontSize: 12,
               lineHeight: 1.55,
               marginBottom: 10,
+              fontFamily: "'Exo 2', sans-serif",
             }}>
               {level.meta.description}
             </div>
@@ -395,12 +380,14 @@ export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) 
 
       {/* Заголовок */}
       <div className="relative z-10 text-center pt-7">
-        <h1 className="text-4xl font-bold text-yellow-400">CodeQuest<TitleShip /></h1>
-        <p className="text-indigo-500 mt-1 text-xs tracking-[0.28em] uppercase">
+        <h1 className="text-4xl font-bold text-yellow-400 flex items-center justify-center gap-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          CodeQuest <ShipSVG />
+        </h1>
+        <p className="text-indigo-500 mt-1 text-xs tracking-[0.28em] uppercase" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           Навигационная карта
         </p>
         {completedCount > 0 && (
-          <p className="text-indigo-400 mt-1 text-xs">
+          <p className="text-indigo-400 mt-1 text-xs" style={{ fontFamily: "'Exo 2', sans-serif" }}>
             Пройдено секторов: {completedCount} / {levels.length}
           </p>
         )}
