@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { playClick } from '../core/sounds'
 
 interface Props {
   hint: string
@@ -87,7 +88,7 @@ export function BippMessage({ hint, onOpenBriefing }: Props) {
         className={`flex-shrink-0 ${onOpenBriefing ? 'cursor-pointer' : ''}`}
         animate={{ y: [0, -4, 0] }}
         transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-        onClick={onOpenBriefing}
+        onClick={onOpenBriefing ? () => { playClick(); onOpenBriefing() } : undefined}
         title={onOpenBriefing ? 'Открыть брифинг БИПП' : undefined}
       >
         <BippSVG />

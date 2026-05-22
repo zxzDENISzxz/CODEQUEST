@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { playBippSpeak } from '../core/sounds'
+import { playBippSpeak, playClick } from '../core/sounds'
 import type { ComponentType } from 'react'
 
 interface Props {
@@ -196,7 +196,7 @@ export function BippBriefing({ levelId, title, text, onClose, instant = false, H
 
         {/* Button */}
         <button
-          onClick={skipOrClose}
+          onClick={() => { playClick(); skipOrClose() }}
           className="w-full py-3 rounded-xl font-bold text-base transition-colors bg-yellow-400 text-indigo-950 hover:bg-yellow-300"
           style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.05em' }}
         >
