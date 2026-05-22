@@ -37,168 +37,116 @@ function MiniPlanet() {
   )
 }
 
-export function MoveHintPanel() {
-  const [hovered, setHovered]   = useState(false)
-  const [shipPos, setShipPos]   = useState(0)
-  const [typed,   setTyped]     = useState('')
-  const [cursor,  setCursor]    = useState(true)
+export function MoveHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
+  const [open,    setOpen]    = useState(false)
+  const [shipPos, setShipPos] = useState(0)
+  const [typed,   setTyped]   = useState('')
+  const [cursor,  setCursor]  = useState(true)
   const cancelRef = useRef(false)
+  const active = open || autoPlay
 
-  // Мигание курсора
   useEffect(() => {
     const id = setInterval(() => setCursor(c => !c), 530)
     return () => clearInterval(id)
   }, [])
 
-  // Анимационный цикл
   useEffect(() => {
-    if (!hovered) {
+    if (!active) {
       cancelRef.current = true
-      setShipPos(0)
-      setTyped('')
+      setShipPos(0); setTyped('')
       return
     }
-
     cancelRef.current = false
-
     const run = async () => {
       while (!cancelRef.current) {
-        setShipPos(0)
-        setTyped('')
+        setShipPos(0); setTyped('')
         await wait(600)
-
         for (let step = 1; step <= COLS - 1; step++) {
-          // Печатаем "move"
           for (const ch of 'move') {
             if (cancelRef.current) return
-            setTyped(prev => prev + ch)
-            await wait(120)
+            setTyped(prev => prev + ch); await wait(120)
           }
-          await wait(380)
-          if (cancelRef.current) return
-
-          // Корабль двигается
-          setShipPos(step)
-          await wait(420)
-          if (cancelRef.current) return
-
-          setTyped('')
-          await wait(280)
+          await wait(380); if (cancelRef.current) return
+          setShipPos(step); await wait(420); if (cancelRef.current) return
+          setTyped(''); await wait(280)
         }
-
-        // Пауза на финале перед сбросом
         await wait(900)
       }
     }
-
     run()
     return () => { cancelRef.current = true }
-  }, [hovered])
+  }, [active])
+
+  const body = (
+    <div style={{
+      padding: '16px 14px 14px',
+      background: 'rgba(15,12,40,0.88)',
+      border: '1px solid rgba(99,102,241,0.35)',
+      borderTop: autoPlay ? undefined : 'none',
+      borderRadius: autoPlay ? 10 : '0 0 10px 10px',
+    }}>
+      <div style={{ position: 'relative', display: 'flex', gap: GAP, marginBottom: 14 }}>
+        {Array.from({ length: COLS }).map((_, i) => (
+          <div key={i} style={{
+            width: CELL, height: CELL, background: '#1e1b4b', borderRadius: 7, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {i === COLS - 1 && <MiniPlanet />}
+          </div>
+        ))}
+        <motion.div
+          style={{
+            position: 'absolute', top: 0, left: 0, width: CELL, height: CELL,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none',
+          }}
+          animate={{ x: shipPos * (CELL + GAP) }}
+          transition={{ type: 'tween', duration: 0.28, ease: 'easeInOut' }}
+        >
+          <MiniShip />
+        </motion.div>
+      </div>
+      <div style={{
+        background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
+        padding: '8px 12px', fontFamily: 'monospace', fontSize: 15,
+        minHeight: 38, display: 'flex', alignItems: 'center',
+      }}>
+        <span style={{ color: '#34d399' }}>{typed}</span>
+        <span style={{
+          display: 'inline-block', width: 2, height: 16,
+          background: cursor ? '#34d399' : 'transparent', marginLeft: 1,
+        }} />
+      </div>
+      <p style={{ color: '#4b5563', fontSize: 11, marginTop: 8, fontFamily: 'monospace' }}>
+        каждый <span style={{ color: '#34d399' }}>move</span> — один шаг вперёд
+      </p>
+    </div>
+  )
+
+  if (autoPlay) return <div>{body}</div>
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {/* Свёрнутая полоска */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '8px 14px',
-        background: hovered ? 'rgba(30,27,75,0.7)' : 'rgba(30,27,75,0.45)',
-        border: '1px solid rgba(99,102,241,0.35)',
-        borderRadius: hovered ? '10px 10px 0 0' : 10,
-        cursor: 'default',
-        transition: 'background 0.2s, border-radius 0.15s',
-        userSelect: 'none',
-      }}>
+    <div>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
+          background: open ? 'rgba(30,27,75,0.7)' : 'rgba(30,27,75,0.45)',
+          border: '1px solid rgba(99,102,241,0.35)',
+          borderRadius: open ? '10px 10px 0 0' : 10,
+          cursor: 'pointer', transition: 'background 0.2s, border-radius 0.15s', userSelect: 'none',
+        }}
+      >
         <span style={{ fontSize: 13, color: '#34d399' }}>▶</span>
         <span style={{ fontSize: 13, color: '#a5b4fc', fontWeight: 600 }}>
-          Как работает{' '}
-          <span style={{ color: '#34d399', fontFamily: 'monospace' }}>move</span>
-          ?
+          Как работает <span style={{ color: '#34d399', fontFamily: 'monospace' }}>move</span>?
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#4b5563' }}>
-          {hovered ? '▲' : '▼'}
-        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#4b5563' }}>{open ? '▲' : '▼'}</span>
       </div>
-
-      {/* Разворачиваемая зона */}
       <AnimatePresence initial={false}>
-        {hovered && (
-          <motion.div
-            key="demo"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div style={{
-              padding: '16px 14px 14px',
-              background: 'rgba(15,12,40,0.88)',
-              border: '1px solid rgba(99,102,241,0.35)',
-              borderTop: 'none',
-              borderRadius: '0 0 10px 10px',
-            }}>
-
-              {/* Мини-сетка */}
-              <div style={{ position: 'relative', display: 'flex', gap: GAP, marginBottom: 14 }}>
-                {Array.from({ length: COLS }).map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: CELL, height: CELL,
-                      background: '#1e1b4b',
-                      borderRadius: 7,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {i === COLS - 1 && <MiniPlanet />}
-                  </div>
-                ))}
-
-                {/* Корабль */}
-                <motion.div
-                  style={{
-                    position: 'absolute',
-                    top: 0, left: 0,
-                    width: CELL, height: CELL,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }}
-                  animate={{ x: shipPos * (CELL + GAP) }}
-                  transition={{ type: 'tween', duration: 0.28, ease: 'easeInOut' }}
-                >
-                  <MiniShip />
-                </motion.div>
-              </div>
-
-              {/* Поле ввода команды */}
-              <div style={{
-                background: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: 8,
-                padding: '8px 12px',
-                fontFamily: 'monospace',
-                fontSize: 15,
-                minHeight: 38,
-                display: 'flex', alignItems: 'center',
-              }}>
-                <span style={{ color: '#34d399' }}>{typed}</span>
-                <span style={{
-                  display: 'inline-block',
-                  width: 2, height: 16,
-                  background: cursor ? '#34d399' : 'transparent',
-                  marginLeft: 1,
-                  transition: 'background 0.1s',
-                }} />
-              </div>
-
-              <p style={{ color: '#4b5563', fontSize: 11, marginTop: 8, fontFamily: 'monospace' }}>
-                каждый <span style={{ color: '#34d399' }}>move</span> — один шаг вперёд
-              </p>
-            </div>
+        {open && (
+          <motion.div key="demo" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} style={{ overflow: 'hidden' }}>
+            {body}
           </motion.div>
         )}
       </AnimatePresence>

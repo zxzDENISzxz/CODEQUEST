@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { StarBackground } from './components/StarBackground'
-import { GameGrid } from './components/GameGrid'
+import { GameGrid, ShipSVG } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
 import { BippMessage } from './components/BippMessage'
 import { FinalScreen } from './components/FinalScreen'
+import { BippBriefing } from './components/BippBriefing'
 import { LevelSelect } from './components/LevelSelect'
 import { CommandCounter, calcStars } from './components/CommandCounter'
 import { parseCommands } from './core/CommandParser'
 import { runCommands, countCommands } from './core/GameEngine'
-import { playMove, playTurn, playWin, playFail, playClick, setMuted } from './core/sounds'
+import { startThruster, stopThruster, playTurn, playWin, playFail, playClick, setMuted } from './core/sounds'
 import { levels } from './levels/index'
 import { useGameStore } from './store/gameStore'
 import type { GameState, Position, GameEvent } from './core/GameEngine'
@@ -21,7 +22,7 @@ function nearestAngle(current: number, target: number): number {
 export default function App() {
   const [screen, setScreen] = useState<'select' | 'game'>('select')
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
-  const { levelWins, levelCodes, levelStars, setWin, setStars } = useGameStore()
+  const { levelWins, levelCodes, levelStars, briefingsSeen, setWin, setStars, setBriefingSeen } = useGameStore()
 
   const [currentFuel, setCurrentFuel] = useState<number>(levels[0].state.fuel)
 
@@ -42,6 +43,8 @@ export default function App() {
   const [failedCommandIndex, setFailedCommandIndex] = useState<number | null>(null)
   const [lineExecCounts, setLineExecCounts] = useState<Record<number, number>>({})
   const [showFinalScreen, setShowFinalScreen] = useState(false)
+  const [showBriefing, setShowBriefing] = useState(false)
+  const [briefingInstant, setBriefingInstant] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const freshWinRef = useRef(false)
 
@@ -71,13 +74,13 @@ export default function App() {
     animationRef.current = true
     setAnimating(true)
     setVisibleStatus('idle')
+    startThruster()
 
     let i = 0
     intervalRef.current = setInterval(() => {
       const event = events[i]
 
       if (event.type === 'move') {
-        playMove()
         setDisplayPos(event.position)
         setActiveCommandIndex(event.commandIndex)
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
@@ -96,6 +99,7 @@ export default function App() {
       }
 
       if (event.type === 'win' || event.type === 'fail') {
+        stopThruster()
         event.type === 'win' ? playWin() : playFail()
         clearInterval(intervalRef.current!)
         intervalRef.current = null
@@ -108,6 +112,7 @@ export default function App() {
 
       i++
       if (i >= events.length) {
+        stopThruster()
         clearInterval(intervalRef.current!)
         intervalRef.current = null
         animationRef.current = false
@@ -188,6 +193,7 @@ export default function App() {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
+    stopThruster()
     animationRef.current = false
     setAnimating(false)
     setTeleporting(false)
@@ -217,6 +223,7 @@ export default function App() {
       setLastCommandCount(null)
       setLineExecCounts({})
       setFailedCommandIndex(null)
+      if (levels[nextIndex].meta.briefing && !briefingsSeen[nextIndex]) { setBriefingInstant(false); setShowBriefing(true) }
     }
   }
 
@@ -233,6 +240,7 @@ export default function App() {
       setLastCommandCount(null)
       setLineExecCounts({})
       setFailedCommandIndex(null)
+      if (levels[prevIndex].meta.briefing && !briefingsSeen[prevIndex]) { setBriefingInstant(false); setShowBriefing(true) }
     }
   }
 
@@ -254,6 +262,7 @@ export default function App() {
           setLineExecCounts({})
           setFailedCommandIndex(null)
           setScreen('game')
+          if (levels[index].meta.briefing && !briefingsSeen[index]) { setBriefingInstant(false); setShowBriefing(true) }
         }}
       />
     )
@@ -265,9 +274,11 @@ export default function App() {
       <StarBackground />
 
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-yellow-400">CodeQuest 🚀</h1>
-        <p className="text-indigo-300 mt-1">Сектор {meta.id} — {meta.title}</p>
-        <p className="text-indigo-400 text-sm mt-1">{meta.description}</p>
+        <h1 className="text-4xl font-bold text-yellow-400 flex items-center justify-center gap-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          CodeQuest <ShipSVG animating={animating} />
+        </h1>
+        <p className="text-indigo-300 mt-1" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem', letterSpacing: '0.04em' }}>Сектор {meta.id} — {meta.title}</p>
+        <p className="text-indigo-400 text-sm mt-1" style={{ fontFamily: "'Exo 2', sans-serif" }}>{meta.description}</p>
       </div>
 
       <div className="grid gap-12 items-start w-full max-w-4xl" style={{ gridTemplateColumns: '1fr auto' }}>
@@ -319,8 +330,19 @@ export default function App() {
         </div>
 
         <div className="flex flex-col gap-3 w-80">
-          <BippMessage hint={meta.hint} />
-          {currentLevel.HintPanel && <currentLevel.HintPanel />}
+          <div className="flex justify-end">
+            <button
+              onClick={() => { playClick(); const next = !isMuted; setMuted(next); setIsMuted(next) }}
+              className="text-2xl opacity-40 hover:opacity-90 transition-opacity cursor-pointer"
+              title={isMuted ? 'Включить звук' : 'Выключить звук'}
+            >
+              {isMuted ? '🔇' : '🔊'}
+            </button>
+          </div>
+          <BippMessage
+            hint={meta.hint}
+            onOpenBriefing={meta.briefing ? () => { setBriefingInstant(true); setShowBriefing(true) } : undefined}
+          />
           <CommandInput
             onRun={handleRun}
             disabled={state.status === 'win'}
@@ -330,21 +352,12 @@ export default function App() {
             failedCommandIndex={failedCommandIndex}
             lineExecCounts={lineExecCounts}
           />
-          <div className="flex gap-2">
-            <button
-              onClick={() => { playClick(); handleReset() }}
-              className="flex-1 py-2 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
-            >
-              🔄 Сбросить
-            </button>
-            <button
-              onClick={() => { playClick(); const next = !isMuted; setMuted(next); setIsMuted(next) }}
-              className="py-2 px-3 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
-              title={isMuted ? 'Включить звук' : 'Выключить звук'}
-            >
-              {isMuted ? '🔇' : '🔊'}
-            </button>
-          </div>
+          <button
+            onClick={() => { playClick(); handleReset() }}
+            className="py-2 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
+          >
+            🔄 Сбросить
+          </button>
           <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-indigo-700">
             <div className="flex gap-2">
               <button
@@ -375,6 +388,16 @@ export default function App() {
 
     {showFinalScreen && (
       <FinalScreen onContinue={() => { setShowFinalScreen(false); setScreen('select') }} />
+    )}
+    {showBriefing && meta.briefing && (
+      <BippBriefing
+        levelId={meta.id}
+        title={meta.title}
+        text={meta.briefing}
+        instant={briefingInstant}
+        HintPanel={currentLevel.HintPanel}
+        onClose={() => { setBriefingSeen(currentLevelIndex); setShowBriefing(false) }}
+      />
     )}
     </>
   )

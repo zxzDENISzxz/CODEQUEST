@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 
 interface Props {
   hint: string
+  onOpenBriefing?: () => void
 }
 
 function BippSVG() {
@@ -77,15 +78,17 @@ function BippSVG() {
   )
 }
 
-export function BippMessage({ hint }: Props) {
+export function BippMessage({ hint, onOpenBriefing }: Props) {
   return (
     <div className="flex items-start gap-3">
 
-      {/* БИПП — плавно покачивается */}
+      {/* БИПП — плавно покачивается, кликабелен если есть брифинг */}
       <motion.div
-        className="flex-shrink-0"
+        className={`flex-shrink-0 ${onOpenBriefing ? 'cursor-pointer' : ''}`}
         animate={{ y: [0, -4, 0] }}
         transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+        onClick={onOpenBriefing}
+        title={onOpenBriefing ? 'Открыть брифинг БИПП' : undefined}
       >
         <BippSVG />
       </motion.div>

@@ -74,12 +74,13 @@ function CodeLine({ text, partial }: { text: string; partial?: boolean }) {
 // line0 печатается посимвольно → line1 → line2 → пробел (ship движется) → финал
 const FULL_LINES = ['repeat 3 {', '  move', '}']
 
-export function RepeatHintPanel() {
-  const [hovered,   setHovered]  = useState(false)
-  const [lines,     setLines]    = useState<string[]>([])
-  const [shipPos,   setShipPos]  = useState(0)
-  const [cursor,    setCursor]   = useState(true)
+export function RepeatHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
+  const [open,    setOpen]    = useState(false)
+  const [lines,   setLines]   = useState<string[]>([])
+  const [shipPos, setShipPos] = useState(0)
+  const [cursor,  setCursor]  = useState(true)
   const cancelRef = useRef(false)
+  const active = open || autoPlay
 
   useEffect(() => {
     const id = setInterval(() => setCursor(c => !c), 530)
@@ -87,148 +88,124 @@ export function RepeatHintPanel() {
   }, [])
 
   useEffect(() => {
-    if (!hovered) {
+    if (!active) {
       cancelRef.current = true
       setLines([]); setShipPos(0)
       return
     }
     cancelRef.current = false
-
     const run = async () => {
       while (!cancelRef.current) {
         setLines([]); setShipPos(0)
         await wait(500)
-
-        // Печатаем строки одну за другой
         for (let li = 0; li < FULL_LINES.length; li++) {
           const fullLine = FULL_LINES[li]
           for (let ci = 1; ci <= fullLine.length; ci++) {
             if (cancelRef.current) return
             const partial = fullLine.slice(0, ci)
-            setLines(prev => {
-              const next = [...prev]
-              next[li] = partial
-              return next
-            })
+            setLines(prev => { const next = [...prev]; next[li] = partial; return next })
             await wait(li === 0 ? 90 : 110)
           }
           if (li < FULL_LINES.length - 1) await wait(200)
         }
-
-        // «Запуск» — корабль делает 3 шага
         await wait(500)
         for (let step = 1; step <= 3; step++) {
           if (cancelRef.current) return
-          setShipPos(step)
-          await wait(400)
+          setShipPos(step); await wait(400)
         }
-
         await wait(900)
       }
     }
-
     run()
     return () => { cancelRef.current = true }
-  }, [hovered])
+  }, [active])
 
-  // Курсор стоит в конце последней напечатанной строки
   const lastLineIdx = lines.length - 1
 
-  return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+  const body = (
+    <div style={{
+      padding: '16px 14px 14px',
+      background: 'rgba(15,12,40,0.88)',
+      border: '1px solid rgba(99,102,241,0.35)',
+      borderTop: autoPlay ? undefined : 'none',
+      borderRadius: autoPlay ? 10 : '0 0 10px 10px',
+    }}>
+      <div style={{ position: 'relative', display: 'flex', gap: GAP, marginBottom: 14 }}>
+        {Array.from({ length: COLS }).map((_, i) => (
+          <div key={i} style={{
+            width: CELL, height: CELL, background: '#1e1b4b',
+            borderRadius: 7, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {i === COLS - 1 && <MiniPlanet />}
+          </div>
+        ))}
+        <motion.div
+          style={{
+            position: 'absolute', top: 0, left: 0, width: CELL, height: CELL,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none',
+          }}
+          animate={{ x: shipPos * (CELL + GAP) }}
+          transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
+        >
+          <MiniShip />
+        </motion.div>
+      </div>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '8px 14px',
-        background: hovered ? 'rgba(30,27,75,0.7)' : 'rgba(30,27,75,0.45)',
-        border: '1px solid rgba(99,102,241,0.35)',
-        borderRadius: hovered ? '10px 10px 0 0' : 10,
-        cursor: 'default', transition: 'background 0.2s, border-radius 0.15s',
-        userSelect: 'none',
+        background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
+        padding: '10px 12px', fontFamily: 'monospace', fontSize: 14, lineHeight: 1.7, minHeight: 72,
       }}>
+        {FULL_LINES.map((fullLine, li) => {
+          const printed = lines[li] ?? ''
+          if (!printed && li > (lines.length - 1)) return null
+          const isLast = li === lastLineIdx
+          return (
+            <div key={li}>
+              <CodeLine text={printed} />
+              {isLast && (
+                <span style={{
+                  display: 'inline-block', width: 2, height: 14,
+                  background: cursor ? '#94a3b8' : 'transparent', marginLeft: 1, verticalAlign: 'middle',
+                }} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <p style={{ color: '#4b5563', fontSize: 11, marginTop: 8, fontFamily: 'monospace' }}>
+        <span style={{ color: '#fb923c' }}>repeat</span>{' '}
+        <span style={{ color: '#60a5fa' }}>N</span>{' '}
+        <span style={{ color: '#94a3b8' }}>{'{ }'}</span>
+        {' '}— повторить N раз команду в скобках
+      </p>
+    </div>
+  )
+
+  if (autoPlay) return <div>{body}</div>
+
+  return (
+    <div>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
+          background: open ? 'rgba(30,27,75,0.7)' : 'rgba(30,27,75,0.45)',
+          border: '1px solid rgba(99,102,241,0.35)',
+          borderRadius: open ? '10px 10px 0 0' : 10,
+          cursor: 'pointer', transition: 'background 0.2s, border-radius 0.15s', userSelect: 'none',
+        }}
+      >
         <span style={{ fontSize: 13, color: '#60a5fa' }}>↺</span>
         <span style={{ fontSize: 13, color: '#a5b4fc', fontWeight: 600 }}>
-          Как работает{' '}
-          <span style={{ color: '#fb923c', fontFamily: 'monospace' }}>repeat</span>?
+          Как работает <span style={{ color: '#fb923c', fontFamily: 'monospace' }}>repeat</span>?
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#4b5563' }}>
-          {hovered ? '▲' : '▼'}
-        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#4b5563' }}>{open ? '▲' : '▼'}</span>
       </div>
-
       <AnimatePresence initial={false}>
-        {hovered && (
-          <motion.div
-            key="demo"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div style={{
-              padding: '16px 14px 14px',
-              background: 'rgba(15,12,40,0.88)',
-              border: '1px solid rgba(99,102,241,0.35)',
-              borderTop: 'none', borderRadius: '0 0 10px 10px',
-            }}>
-              {/* Мини-сетка */}
-              <div style={{ position: 'relative', display: 'flex', gap: GAP, marginBottom: 14 }}>
-                {Array.from({ length: COLS }).map((_, i) => (
-                  <div key={i} style={{
-                    width: CELL, height: CELL, background: '#1e1b4b',
-                    borderRadius: 7, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {i === COLS - 1 && <MiniPlanet />}
-                  </div>
-                ))}
-                <motion.div
-                  style={{
-                    position: 'absolute', top: 0, left: 0,
-                    width: CELL, height: CELL,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }}
-                  animate={{ x: shipPos * (CELL + GAP) }}
-                  transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
-                >
-                  <MiniShip />
-                </motion.div>
-              </div>
-
-              {/* Блок кода */}
-              <div style={{
-                background: '#0f172a', border: '1px solid #334155',
-                borderRadius: 8, padding: '10px 12px',
-                fontFamily: 'monospace', fontSize: 14, lineHeight: 1.7,
-                minHeight: 72,
-              }}>
-                {FULL_LINES.map((fullLine, li) => {
-                  const printed = lines[li] ?? ''
-                  if (!printed && li > (lines.length - 1)) return null
-                  const isLast = li === lastLineIdx
-                  return (
-                    <div key={li}>
-                      <CodeLine text={printed} />
-                      {isLast && (
-                        <span style={{
-                          display: 'inline-block', width: 2, height: 14,
-                          background: cursor ? '#94a3b8' : 'transparent', marginLeft: 1,
-                          verticalAlign: 'middle',
-                        }} />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              <p style={{ color: '#4b5563', fontSize: 11, marginTop: 8, fontFamily: 'monospace' }}>
-                <span style={{ color: '#fb923c' }}>repeat</span>{' '}
-                <span style={{ color: '#60a5fa' }}>N</span>{' '}
-                <span style={{ color: '#94a3b8' }}>{'{ }'}</span>
-                {' '}— повторить N раз команду в скобках
-              </p>
-            </div>
+        {open && (
+          <motion.div key="demo" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} style={{ overflow: 'hidden' }}>
+            {body}
           </motion.div>
         )}
       </AnimatePresence>

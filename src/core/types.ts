@@ -24,6 +24,7 @@ export interface LevelMeta {
   description: string
   hint: string
   minCommands: number
+  briefing?: string
 }
 
 export interface LevelVisual {
@@ -37,5 +38,5 @@ export interface LevelDef {
   state: GameState
   meta: LevelMeta
   visual: LevelVisual
-  HintPanel?: ComponentType
+  HintPanel?: ComponentType<{ autoPlay?: boolean }>
 }

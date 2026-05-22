@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { startThruster, stopThruster, playLanding, playArrival } from '../core/sounds'
 
 interface Props {
   onContinue: () => void
@@ -98,6 +100,16 @@ function ShipSVG() {
 }
 
 export function FinalScreen({ onContinue }: Props) {
+  useEffect(() => {
+    const t1 = setTimeout(() => startThruster(), 1200)
+    const t2 = setTimeout(() => { stopThruster(); playLanding() }, 6900)
+    const t3 = setTimeout(() => playArrival(), 7900)
+    return () => {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3)
+      stopThruster()
+    }
+  }, [])
+
   return (
     <motion.div
       className="fixed inset-0 z-50 overflow-hidden flex flex-col"
