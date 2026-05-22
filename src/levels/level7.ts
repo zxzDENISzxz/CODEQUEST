@@ -28,6 +28,6 @@ export const level7: LevelDef = {
     obstacleTheme: 'debris',
     GoalPlanet: PlanetDrax,
     mapPosition: { x: 36, y: 67 },
-    mapColor: { color: '#9ca3af', glow: 'rgba(156,163,175,0.40)' },
+    mapColor: { color: '#ef4444', glow: 'rgba(239,68,68,0.50)' },
   },
 }
