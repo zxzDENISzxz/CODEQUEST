@@ -4,18 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 const CELL = 50
 const GAP  = 4
 
-type Dir = 'right' | 'down' | 'left' | 'up'
-const DIR_ANGLE: Record<Dir, number> = { right: 0, down: 90, left: 180, up: -90 }
-
 function wait(ms: number) {
   return new Promise<void>(resolve => setTimeout(resolve, ms))
 }
 
-function MiniShip({ dir }: { dir: Dir }) {
+function MiniShip({ rotation }: { rotation: number }) {
   return (
     <motion.svg
       width="28" height="28" viewBox="0 0 40 40" fill="none"
-      animate={{ rotate: DIR_ANGLE[dir] }}
+      animate={{ rotate: rotation }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
     >
       <polygon points="36,20 8,10 8,30" fill="#93c5fd"/>
@@ -44,9 +41,9 @@ function MiniPlanet() {
 
 export function TurnHintPanel() {
   const [hovered, setHovered] = useState(false)
-  const [shipX,   setShipX]   = useState(1)
-  const [shipY,   setShipY]   = useState(0)
-  const [dir,     setDir]     = useState<Dir>('right')
+  const [shipX,     setShipX]    = useState(0)
+  const [shipY,     setShipY]    = useState(0)
+  const [rotation,  setRotation] = useState(0)
   const [typed,   setTyped]   = useState('')
   const [cursor,  setCursor]  = useState(true)
   const cancelRef = useRef(false)
@@ -59,55 +56,45 @@ export function TurnHintPanel() {
   useEffect(() => {
     if (!hovered) {
       cancelRef.current = true
-      setShipX(1); setShipY(0); setDir('right'); setTyped('')
+      setShipX(0); setShipY(0); setRotation(0); setTyped('')
       return
     }
     cancelRef.current = false
 
     const run = async () => {
       while (!cancelRef.current) {
-        setShipX(1); setShipY(0); setDir('right'); setTyped('')
+        setShipX(0); setShipY(0); setRotation(0); setTyped('')
         await wait(600)
 
-        // turn → смотрим вниз
-        for (const ch of 'turn') {
-          if (cancelRef.current) return
-          setTyped(p => p + ch); await wait(120)
-        }
-        await wait(380)
-        if (cancelRef.current) return
-        setDir('down'); setTyped('')
-        await wait(380)
+        // turn → вниз (+90)
+        for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
+        await wait(380); if (cancelRef.current) return
+        setRotation(r => r + 90); setTyped(''); await wait(380)
 
-        // move → идём вниз (1,1)
-        for (const ch of 'move') {
-          if (cancelRef.current) return
-          setTyped(p => p + ch); await wait(120)
-        }
-        await wait(380)
-        if (cancelRef.current) return
-        setShipY(1); setTyped('')
-        await wait(380)
+        // move → (0,1)
+        for (const ch of 'move') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
+        await wait(380); if (cancelRef.current) return
+        setShipY(1); setTyped(''); await wait(380)
 
-        // turn → смотрим влево
-        for (const ch of 'turn') {
-          if (cancelRef.current) return
-          setTyped(p => p + ch); await wait(120)
-        }
-        await wait(380)
-        if (cancelRef.current) return
-        setDir('left'); setTyped('')
-        await wait(380)
+        // turn → влево (+90)
+        for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
+        await wait(380); if (cancelRef.current) return
+        setRotation(r => r + 90); setTyped(''); await wait(380)
 
-        // move → идём влево (0,1) — цель
-        for (const ch of 'move') {
-          if (cancelRef.current) return
-          setTyped(p => p + ch); await wait(120)
-        }
-        await wait(380)
-        if (cancelRef.current) return
-        setShipX(0); setTyped('')
-        await wait(1000)
+        // turn → вверх (+90)
+        for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
+        await wait(380); if (cancelRef.current) return
+        setRotation(r => r + 90); setTyped(''); await wait(380)
+
+        // turn → вправо (+90)
+        for (const ch of 'turn') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
+        await wait(380); if (cancelRef.current) return
+        setRotation(r => r + 90); setTyped(''); await wait(380)
+
+        // move → (1,1) — цель
+        for (const ch of 'move') { if (cancelRef.current) return; setTyped(p => p + ch); await wait(120) }
+        await wait(380); if (cancelRef.current) return
+        setShipX(1); setTyped(''); await wait(1000)
       }
     }
 
@@ -161,7 +148,7 @@ export function TurnHintPanel() {
                     width: CELL, height: CELL, background: '#1e1b4b',
                     borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    {x === 0 && y === 1 && <MiniPlanet />}
+                    {x === 1 && y === 1 && <MiniPlanet />}
                   </div>
                 ))}
 
@@ -175,7 +162,7 @@ export function TurnHintPanel() {
                   animate={{ x: shipX * (CELL + GAP), y: shipY * (CELL + GAP) }}
                   transition={{ type: 'tween', duration: 0.28, ease: 'easeInOut' }}
                 >
-                  <MiniShip dir={dir} />
+                  <MiniShip rotation={rotation} />
                 </motion.div>
               </div>
 
