@@ -321,7 +321,7 @@ export default function App() {
             )}
             {!animating && visibleStatus === 'fail' && (
               <div className="whitespace-nowrap text-center text-2xl font-bold text-red-400">
-                💥 Навигационный сбой. Повтори.
+                💥 Навигационный сбой. Попробуй снова.
               </div>
             )}
             {!animating && lastCommandCount !== null && visibleStatus === 'win' && (
