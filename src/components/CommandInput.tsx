@@ -82,6 +82,22 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
           ref={textareaRef}
           value={code}
           onChange={e => onCodeChange(e.target.value)}
+          onPaste={e => {
+            const raw = e.clipboardData.getData('text')
+            if (raw.includes('\\n')) {
+              e.preventDefault()
+              const normalized = raw.replace(/\\n/g, '\n')
+              const ta = e.currentTarget
+              const start = ta.selectionStart ?? 0
+              const end   = ta.selectionEnd   ?? 0
+              const next  = code.slice(0, start) + normalized + code.slice(end)
+              onCodeChange(next)
+              requestAnimationFrame(() => {
+                const pos = start + normalized.length
+                ta.setSelectionRange(pos, pos)
+              })
+            }
+          }}
           onScroll={e => setScrollTop((e.target as HTMLTextAreaElement).scrollTop)}
           disabled={disabled}
           placeholder="введи команды..."

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "solve": "node --import ./scripts/register.mjs --experimental-strip-types scripts/solve-levels.ts"
   },
   "dependencies": {
     "blockly": "^12.5.1",

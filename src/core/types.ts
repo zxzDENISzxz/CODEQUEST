@@ -23,7 +23,7 @@ export interface LevelMeta {
   title: string
   description: string
   hint: string
-  minCommands: number
+  minCommands?: number
   briefing?: string
 }
 

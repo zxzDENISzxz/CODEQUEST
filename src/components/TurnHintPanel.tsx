@@ -96,6 +96,7 @@ export function TurnHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
       border: '1px solid rgba(99,102,241,0.35)',
       borderTop: autoPlay ? undefined : 'none',
       borderRadius: autoPlay ? 10 : '0 0 10px 10px',
+      minWidth: 260,
     }}>
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: `${CELL}px ${CELL}px`, gap: GAP, marginBottom: 14, width: 'fit-content' }}>
         {([0,0,1,0,0,1,1,1] as number[]).reduce<[number,number][]>((acc,_,i,a) =>
@@ -122,7 +123,7 @@ export function TurnHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
       <div style={{
         background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
         padding: '8px 12px', fontFamily: 'monospace', fontSize: 15,
-        minHeight: 38, display: 'flex', alignItems: 'center',
+        height: 38, display: 'flex', alignItems: 'center', width: '100%', boxSizing: 'border-box', overflow: 'hidden',
       }}>
         <span style={{ color: '#fb923c' }}>{typed}</span>
         <span style={{ display: 'inline-block', width: 2, height: 16, background: cursor ? '#fb923c' : 'transparent', marginLeft: 1 }} />

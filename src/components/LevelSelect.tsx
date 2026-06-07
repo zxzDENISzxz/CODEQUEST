@@ -6,100 +6,148 @@ import { playClick } from '../core/sounds'
 import type { LevelDef } from '../core/types'
 
 interface Props {
-  levels: LevelDef[]
-  levelWins: Record<number, boolean>
-  levelStars: Record<number, number>
-  onSelect: (index: number) => void
+  levels:      LevelDef[]
+  levelWins:   Record<number, boolean>
+  levelStars:  Record<number, number>
+  levelGenius: Record<number, boolean>
+  onSelect:    (index: number) => void
 }
 
 
 // ─── Журнал миссии ───────────────────────────────────────────
 
+const COMMANDS = [
+  ['move',         'шаг вперёд'],
+  ['turn',         'поворот на 90° по часовой стрелке'],
+  ['repeat N { }', 'повторить N раз команду в скобках'],
+] as const
+
+function MissionLogContent() {
+  return (
+    <>
+      <p style={{ color: '#e0e7ff', fontSize: 14, lineHeight: 1.7, marginBottom: 14, fontFamily: "'Exo 2', sans-serif" }}>
+        Пилот <span style={{ color: '#fbbf24', fontWeight: 700 }}>Зикс</span> застрял
+        в дальнем космосе после аварии двигателя. Вместе с бортовым ИИ{' '}
+        <span style={{ color: '#60a5fa', fontWeight: 700 }}>БИПП</span> он
+        пробирается сквозь 8 опасных секторов к родной планете{' '}
+        <span style={{ color: '#a78bfa', fontWeight: 700 }}>Аруме</span>.
+      </p>
+      <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, marginBottom: 16, fontFamily: "'Exo 2', sans-serif" }}>
+        Пиши команды для навигационной системы. Каждый манёвр расходует топливо — не дай ему кончиться.
+      </p>
+      <div style={{ borderTop: '1px solid rgba(99,102,241,0.22)', marginBottom: 10 }} />
+      <div style={{ color: '#6b7280', fontSize: 10, letterSpacing: '0.18em', fontFamily: "'Orbitron', sans-serif", marginBottom: 8 }}>
+        КОМАНДЫ НАВИГАЦИИ
+      </div>
+      {COMMANDS.map(([cmd, desc]) => (
+        <div key={cmd} style={{ display: 'flex', gap: 10, marginBottom: 5, alignItems: 'baseline' }}>
+          <span style={{ color: '#34d399', fontFamily: 'monospace', fontSize: 14, fontWeight: 600, minWidth: 120 }}>
+            {cmd}
+          </span>
+          <span style={{ color: '#94a3b8', fontSize: 14 }}>{desc}</span>
+        </div>
+      ))}
+    </>
+  )
+}
+
 function MissionLog() {
-  const [open, setOpen] = useState(true)
+  const [isModal, setIsModal] = useState(() => !localStorage.getItem('missionLogSeen'))
+
+  function closeModal() {
+    playClick()
+    localStorage.setItem('missionLogSeen', '1')
+    setIsModal(false)
+  }
+
+  function openModal() {
+    playClick()
+    setIsModal(true)
+  }
 
   return (
-    <div style={{ position: 'absolute', bottom: 24, right: 24, zIndex: 20, width: 400 }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          width: '100%', padding: '7px 12px',
-          background: 'rgba(6,9,24,0.90)',
-          border: '1px solid rgba(99,102,241,0.38)',
-          borderRadius: open ? '10px 10px 0 0' : 10,
-          color: '#a5b4fc', fontSize: 12, fontWeight: 700,
-          letterSpacing: '0.14em', cursor: 'pointer', fontFamily: "'Orbitron', sans-serif",
-        }}
-      >
-        <motion.span
-          style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', flexShrink: 0 }}
-          animate={{ opacity: [1, 0.25, 1] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        ЖУРНАЛ МИССИИ
-        <span style={{ marginLeft: 'auto', fontSize: 9 }}>{open ? '▼' : '▶'}</span>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open && (
+    <>
+      {/* Модальное окно по центру */}
+      <AnimatePresence>
+        {isModal && (
           <motion.div
-            key="body"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: 'hidden' }}
+            key="modal-bg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 50,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+              background: 'rgba(0,0,6,0.80)',
+            }}
+            onClick={closeModal}
           >
-            <div style={{
-              background: 'rgba(6,9,24,0.92)',
-              border: '1px solid rgba(99,102,241,0.38)',
-              borderTop: 'none',
-              borderRadius: '0 0 10px 10px',
-              padding: '20px 22px 18px',
-            }}>
-              {/* Лор */}
-              <p style={{ color: '#e0e7ff', fontSize: 14, lineHeight: 1.7, marginBottom: 14, fontFamily: "'Exo 2', sans-serif" }}>
-                Пилот <span style={{ color: '#fbbf24', fontWeight: 700 }}>Зикс</span> застрял
-                в дальнем космосе после аварии двигателя. Вместе с бортовым ИИ{' '}
-                <span style={{ color: '#60a5fa', fontWeight: 700 }}>БИПП</span> он
-                пробирается сквозь 8 опасных секторов к родной планете{' '}
-                <span style={{ color: '#a78bfa', fontWeight: 700 }}>Аруме</span>.
-              </p>
-              <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, marginBottom: 16, fontFamily: "'Exo 2', sans-serif" }}>
-                Пиши команды для навигационной системы. Каждый манёвр расходует топливо — не дай ему кончиться.
-              </p>
-
-              {/* Разделитель */}
-              <div style={{ borderTop: '1px solid rgba(99,102,241,0.22)', marginBottom: 10 }} />
-
-              {/* Команды */}
-              <div style={{
-                color: '#6b7280', fontSize: 10, letterSpacing: '0.18em',
-                fontFamily: "'Orbitron', sans-serif", marginBottom: 8,
+            <motion.div
+              initial={{ scale: 0.88, opacity: 0, y: 24 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 12 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              style={{
+                width: 'min(520px, calc(100vw - 48px))',
+                background: 'rgba(6,9,24,0.97)',
+                border: '1px solid rgba(99,102,241,0.38)',
+                borderRadius: 18,
+                padding: '28px 28px 22px',
+                boxShadow: '0 0 60px rgba(99,102,241,0.2), 0 25px 50px rgba(0,0,0,0.65)',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <p style={{
+                textAlign: 'center', fontSize: 10, color: '#6366f1',
+                letterSpacing: '0.28em', fontFamily: "'Orbitron', sans-serif", marginBottom: 18,
               }}>
-                КОМАНДЫ НАВИГАЦИИ
-              </div>
-              {([
-                ['move',          'шаг вперёд'],
-                ['turn',          'поворот на 90° по часовой стрелке'],
-                ['repeat N { }',  'повторить N раз команду в скобках'],
-              ] as const).map(([cmd, desc]) => (
-                <div key={cmd} style={{ display: 'flex', gap: 10, marginBottom: 5, alignItems: 'baseline' }}>
-                  <span style={{
-                    color: '#34d399', fontFamily: 'monospace',
-                    fontSize: 14, fontWeight: 600, minWidth: 120,
-                  }}>
-                    {cmd}
-                  </span>
-                  <span style={{ color: '#94a3b8', fontSize: 14 }}>{desc}</span>
-                </div>
-              ))}
-            </div>
+                ◈ ЖУРНАЛ МИССИИ ◈
+              </p>
+              <MissionLogContent />
+              <button
+                onClick={closeModal}
+                style={{
+                  marginTop: 20, width: '100%', padding: '12px 0',
+                  background: '#fbbf24', color: '#1e1b4b',
+                  border: 'none', borderRadius: 12,
+                  fontFamily: "'Orbitron', sans-serif", fontSize: 13,
+                  fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer',
+                }}
+              >
+                ✓ ПОНЯЛ, ПРИСТУПАЮ!
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+
+      {/* Трей — всегда виден когда модал закрыт */}
+      {!isModal && (
+        <div style={{ position: 'absolute', bottom: 24, right: 24, zIndex: 20 }}>
+          <button
+            onClick={openModal}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '7px 14px',
+              background: 'rgba(6,9,24,0.90)',
+              border: '1px solid rgba(99,102,241,0.38)',
+              borderRadius: 10,
+              color: '#a5b4fc', fontSize: 12, fontWeight: 700,
+              letterSpacing: '0.14em', cursor: 'pointer', fontFamily: "'Orbitron', sans-serif",
+            }}
+          >
+            <motion.span
+              style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', flexShrink: 0 }}
+              animate={{ opacity: [1, 0.25, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            ЖУРНАЛ МИССИИ
+            <span style={{ fontSize: 9 }}>▶</span>
+          </button>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -136,16 +184,17 @@ function SectorConnections({ levels, levelWins }: { levels: LevelDef[], levelWin
 // ─── Нода сектора ─────────────────────────────────────────────
 
 interface NodeProps {
-  level: LevelDef
-  index: number
-  isWon: boolean
+  level:    LevelDef
+  index:    number
+  isWon:    boolean
   isLocked: boolean
-  isLast: boolean
-  stars: number
+  isLast:   boolean
+  stars:    number
+  isGenius: boolean
   onSelect: () => void
 }
 
-function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: NodeProps) {
+function SectorNode({ level, index, isWon, isLocked, isLast, stars, isGenius, onSelect }: NodeProps) {
   const [hovered, setHovered] = useState(false)
   const pos    = level.visual.mapPosition
   const theme  = level.visual.mapColor
@@ -258,18 +307,32 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
         )}
       </motion.button>
 
-      {/* Звёзды под нодой (когда не наведено) */}
+      {/* Звёзды + гений под нодой (когда не наведено) */}
       {isWon && !hovered && (
         <div style={{
           position: 'absolute',
           top: 'calc(100% + 6px)',
           left: '50%',
           transform: 'translateX(-50%)',
-          fontSize: 16,
           whiteSpace: 'nowrap',
           lineHeight: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
         }}>
-          {'⭐'.repeat(stars)}{'🌑'.repeat(3 - stars)}
+          <span style={{ fontSize: 16 }}>
+            {'⭐'.repeat(stars)}{'🌑'.repeat(3 - stars)}
+          </span>
+          {isGenius && (
+            <motion.span
+              style={{ fontSize: 12, color: '#fbbf24', fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.05em' }}
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              🏆
+            </motion.span>
+          )}
         </div>
       )}
 
@@ -353,9 +416,10 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
               <>
                 <div style={{ fontSize: 13, marginBottom: 4 }}>
                   {'⭐'.repeat(stars)}{'🌑'.repeat(3 - stars)}
+                  {isGenius && ' 🏆'}
                 </div>
-                <div style={{ color: '#86efac', fontSize: 11, fontWeight: 600 }}>
-                  Маршрут пройден
+                <div style={{ color: isGenius ? '#fbbf24' : '#86efac', fontSize: 11, fontWeight: 600 }}>
+                  {isGenius ? 'Гениальное решение!' : 'Маршрут пройден'}
                 </div>
               </>
             ) : (
@@ -372,7 +436,7 @@ function SectorNode({ level, index, isWon, isLocked, isLast, stars, onSelect }: 
 
 // ─── Основной компонент ───────────────────────────────────────
 
-export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) {
+export function LevelSelect({ levels, levelWins, levelStars, levelGenius, onSelect }: Props) {
   const completedCount = Object.values(levelWins).filter(Boolean).length
 
   return (
@@ -408,6 +472,7 @@ export function LevelSelect({ levels, levelWins, levelStars, onSelect }: Props) 
             isLocked={index > 0 && !(levelWins[index - 1] ?? false)}
             isLast={index === levels.length - 1}
             stars={levelStars[index]  ?? 0}
+            isGenius={levelGenius[index] ?? false}
             onSelect={() => onSelect(index)}
           />
         ))}

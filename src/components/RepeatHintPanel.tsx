@@ -153,7 +153,8 @@ export function RepeatHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
       </div>
       <div style={{
         background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
-        padding: '10px 12px', fontFamily: 'monospace', fontSize: 14, lineHeight: 1.7, minHeight: 72,
+        padding: '10px 12px', fontFamily: 'monospace', fontSize: 14, lineHeight: 1.7,
+        height: 96, width: '100%', boxSizing: 'border-box', overflow: 'hidden',
       }}>
         {FULL_LINES.map((_, li) => {
           const printed = lines[li] ?? ''

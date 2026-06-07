@@ -43,6 +43,7 @@ src/
 ├── core/
 │   ├── GameEngine.ts       # игровой движок: выполнение команд, события
 │   ├── CommandParser.ts    # парсер текста в команды
+│   ├── sounds.ts           # синтез звуков через Web Audio API (без файлов)
 │   └── types.ts            # общие типы (LevelDef, LevelMeta, LevelVisual)
 │
 ├── levels/
@@ -62,7 +63,8 @@ src/
 │   ├── LevelSelect.tsx      # карта секторов с нодами
 │   ├── CommandInput.tsx     # текстовое поле с подсветкой текущей строки
 │   ├── GoalPlanets.tsx      # SVG-компоненты планет-целей (8 штук)
-│   ├── BippMessage.tsx      # панель подсказок от ИИ БИПП
+│   ├── BippMessage.tsx      # панель подсказок от ИИ БИПП (кликабелен → открывает брифинг)
+│   ├── BippBriefing.tsx     # модальное окно брифинга с эффектом печатной машинки
 │   ├── CommandCounter.tsx   # счётчик команд и звёзды
 │   ├── FinalScreen.tsx      # финальный экран после прохождения игры
 │   ├── StarBackground.tsx   # анимированный звёздный фон
@@ -71,7 +73,7 @@ src/
 │   └── RepeatHintPanel.tsx  # обучающая панель для команды repeat
 │
 ├── store/
-│   └── gameStore.ts         # Zustand: победы, коды, звёзды по уровням
+│   └── gameStore.ts         # Zustand: победы, коды, звёзды, просмотренные брифинги
 │
 └── App.tsx                  # корневой компонент, игровой цикл
 ```
@@ -106,6 +108,7 @@ export const levels: LevelDef[] = [..., level9]
     title: '...'           // название сектора
     description: '...'    // лоровый текст для тултипа на карте
     hint: '...'            // подсказка от БИПП в игре
+    briefing: '...'       // необязательно: текст брифинга (открывается при первом входе)
     minCommands: 7         // порог для 3 звёзд
   },
   visual: {
@@ -114,9 +117,24 @@ export const levels: LevelDef[] = [..., level9]
     mapPosition: { x, y } // позиция ноды на карте (0–100%)
     mapColor: { color, glow }
   },
-  HintPanel?: ComponentType  // необязательно, только для обучающих уровней
+  HintPanel?: ComponentType<{ autoPlay?: boolean }>  // необязательно, встраивается в брифинг
 }
 ```
+
+## Звуковая система
+
+Все звуки синтезируются через **Web Audio API** — никаких аудиофайлов, никаких зависимостей. Модуль `src/core/sounds.ts` экспортирует:
+
+| Функция | Когда вызывается |
+|---|---|
+| `startThruster()` / `stopThruster()` | в начале и конце анимации движения |
+| `playTurn()` | при каждом событии `turn` |
+| `playWin()` | при победе |
+| `playFail()` | при столкновении / нехватке топлива |
+| `playClick()` | при клике на кнопки интерфейса |
+| `playBippSpeak()` | во время печатной машинки в брифинге |
+| `playLanding()` / `playArrival()` | на финальном экране |
+| `setMuted(bool)` | кнопка 🔇/🔊 в правом углу |
 
 ## Архитектура движка
 
