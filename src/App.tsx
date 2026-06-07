@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { StarBackground } from './components/StarBackground'
 import { GameGrid, ShipSVG } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
@@ -10,11 +11,40 @@ import { CommandCounter, calcStars } from './components/CommandCounter'
 import { parseCommands } from './core/CommandParser'
 import { runCommands, countCommands } from './core/GameEngine'
 import { startThruster, stopThruster, playTurn, playWin, playFail, playClick, setMuted, initBackgroundMusic, playBackgroundMusic, stopBackgroundMusic } from './core/sounds'
-import { levels } from './levels/index'
+import { levels, getLevelSolution } from './levels/index'
 import { useGameStore } from './store/gameStore'
 import type { GameState, Position, GameEvent } from './core/GameEngine'
 
 const DIR_ANGLE: Record<string, number> = { right: 0, down: 90, left: 180, up: -90 }
+
+function BeatOptimalBanner() {
+  return (
+    <motion.div
+      initial={{ scale: 0.7, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 22 }}
+      className="flex flex-col items-center gap-1"
+    >
+      <motion.div
+        animate={{ rotate: [0, -8, 8, -8, 8, 0] }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="text-3xl font-bold whitespace-nowrap"
+        style={{ fontFamily: "'Orbitron', sans-serif", color: '#fbbf24' }}
+      >
+        🏆 Гениально!
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="text-sm text-yellow-300 font-semibold whitespace-nowrap"
+        style={{ fontFamily: "'Exo 2', sans-serif" }}
+      >
+        Ты превзошёл оптимальное решение БИПП!
+      </motion.div>
+    </motion.div>
+  )
+}
 function nearestAngle(current: number, target: number): number {
   return current + (((target - current) % 360 + 540) % 360 - 180)
 }
@@ -22,9 +52,9 @@ function nearestAngle(current: number, target: number): number {
 export default function App() {
   const [screen, setScreen] = useState<'select' | 'game'>('select')
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
-  const { levelWins, levelCodes, levelStars, briefingsSeen, setWin, setStars, setBriefingSeen } = useGameStore()
+  const { levelWins, levelCodes, levelStars, levelGenius, briefingsSeen, setWin, setStars, setGenius, setBriefingSeen } = useGameStore()
 
-  const [currentFuel, setCurrentFuel] = useState<number>(levels[0].state.fuel)
+  const [currentFuel, setCurrentFuel] = useState<number>(getLevelSolution(levels[0].meta.id).minMoves)
 
   const [state, setState] = useState<GameState>({
     ...levels[0].state,
@@ -46,6 +76,7 @@ export default function App() {
   const [showBriefing, setShowBriefing] = useState(false)
   const [briefingInstant, setBriefingInstant] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const [beatOptimal, setBeatOptimal] = useState(false)
   const freshWinRef = useRef(false)
 
   useEffect(() => {
@@ -71,7 +102,7 @@ export default function App() {
     return {
       ...levels[index].state,
       status: levelWins[index] ? 'win' : 'idle',
-        fuel: levels[index].state.fuel,
+      fuel: getLevelSolution(levels[index].meta.id).minMoves,
     }
   }
 
@@ -135,6 +166,7 @@ export default function App() {
 
   const currentLevel = levels[currentLevelIndex]
   const meta = currentLevel.meta
+  const currentSolution = getLevelSolution(meta.id)
   const currentCode = levelCodes[currentLevelIndex] ?? ''
   const gridWidth = state.grid[0].length * 64 + (state.grid[0].length - 1) * 4
 
@@ -160,7 +192,7 @@ export default function App() {
       setActiveCommandIndex(null)
       setFailedCommandIndex(null)
       setLineExecCounts({})
-      setCurrentFuel(levels[currentLevelIndex].state.fuel)
+      setCurrentFuel(currentSolution.minMoves)
 
       setTimeout(() => {
         setTeleporting(false)
@@ -168,7 +200,7 @@ export default function App() {
         const freshState: GameState = {
           ...levels[currentLevelIndex].state,
           status: 'idle',
-                fuel: levels[currentLevelIndex].state.fuel,
+          fuel: currentSolution.minMoves,
         }
 
         const { events, finalState } = runCommands(freshState, parsed.commands)
@@ -178,7 +210,10 @@ export default function App() {
 
         if (finalState.status === 'win') {
           setWin(currentLevelIndex)
-          setStars(currentLevelIndex, calcStars(count, meta.minCommands))
+          setStars(currentLevelIndex, calcStars(count, currentSolution.minCommands))
+          const isGenius = count < currentSolution.minCommands
+          setBeatOptimal(isGenius)
+          if (isGenius) setGenius(currentLevelIndex)
           if (currentLevelIndex === levels.length - 1) freshWinRef.current = true
         }
 
@@ -211,12 +246,13 @@ export default function App() {
     setActiveCommandIndex(null)
     setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[currentLevelIndex].state.direction ?? 'right']))
     setDisplayPos(levels[currentLevelIndex].state.player)
-    setState({ ...levels[currentLevelIndex].state, status: 'idle', fuel: levels[currentLevelIndex].state.fuel })
-    setCurrentFuel(levels[currentLevelIndex].state.fuel)
+    setState({ ...levels[currentLevelIndex].state, status: 'idle', fuel: currentSolution.minMoves })
+    setCurrentFuel(currentSolution.minMoves)
     setLastCommandCount(null)
     setFailedCommandIndex(null)
     setLineExecCounts({})
     setShowFinalScreen(false)
+    setBeatOptimal(levelGenius[currentLevelIndex] ?? false)
     freshWinRef.current = false
   }
 
@@ -228,11 +264,12 @@ export default function App() {
       setState(getLevelState(nextIndex))
       setDisplayPos(levels[nextIndex].state.player)
       setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[nextIndex].state.direction ?? 'right']))
-      setCurrentFuel(levels[nextIndex].state.fuel)
+      setCurrentFuel(getLevelSolution(levels[nextIndex].meta.id).minMoves)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
       setFailedCommandIndex(null)
+      setBeatOptimal(levelGenius[nextIndex] ?? false)
       if (levels[nextIndex].meta.briefing && !briefingsSeen[nextIndex]) { setBriefingInstant(false); setShowBriefing(true) }
     }
   }
@@ -245,11 +282,12 @@ export default function App() {
       setState(getLevelState(prevIndex))
       setDisplayPos(levels[prevIndex].state.player)
       setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[prevIndex].state.direction ?? 'right']))
-      setCurrentFuel(levels[prevIndex].state.fuel)
+      setCurrentFuel(getLevelSolution(levels[prevIndex].meta.id).minMoves)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
       setFailedCommandIndex(null)
+      setBeatOptimal(levelGenius[prevIndex] ?? false)
       if (levels[prevIndex].meta.briefing && !briefingsSeen[prevIndex]) { setBriefingInstant(false); setShowBriefing(true) }
     }
   }
@@ -260,17 +298,19 @@ export default function App() {
         levels={levels}
         levelWins={levelWins}
         levelStars={levelStars}
+        levelGenius={levelGenius}
         onSelect={(index) => {
           setCurrentLevelIndex(index)
           setState(getLevelState(index))
           setDisplayPos(levels[index].state.player)
           setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[index].state.direction ?? 'right']))
           setVisibleStatus(levelWins[index] ? 'win' : 'idle')
-          setCurrentFuel(levels[index].state.fuel)
+          setCurrentFuel(getLevelSolution(levels[index].meta.id).minMoves)
           setActiveCommandIndex(null)
           setLastCommandCount(null)
           setLineExecCounts({})
           setFailedCommandIndex(null)
+          setBeatOptimal(levelGenius[index] ?? false)
           setScreen('game')
           if (levels[index].meta.briefing && !briefingsSeen[index]) { setBriefingInstant(false); setShowBriefing(true) }
         }}
@@ -310,14 +350,17 @@ export default function App() {
             <span className={`font-bold ${currentFuel <= 2 ? 'text-red-400' : 'text-white'}`}>
               {currentFuel}
             </span>
-            <span className="text-indigo-500">/ {currentLevel.state.fuel}</span>
+            <span className="text-indigo-500">/ {currentSolution.minMoves}</span>
           </div>
 
           <div className="min-h-[96px] flex flex-col items-center justify-center gap-2" style={{ width: gridWidth }}>
-            {!animating && visibleStatus === 'win' && (
+            {!animating && visibleStatus === 'win' && !beatOptimal && (
               <div className="whitespace-nowrap text-center text-2xl font-bold text-green-400">
                 🪐 Планета достигнута!
               </div>
+            )}
+            {!animating && visibleStatus === 'win' && beatOptimal && (
+              <BeatOptimalBanner />
             )}
             {!animating && visibleStatus === 'fail' && (
               <div className="whitespace-nowrap text-center text-2xl font-bold text-red-400">
@@ -327,8 +370,9 @@ export default function App() {
             {!animating && lastCommandCount !== null && visibleStatus === 'win' && (
               <CommandCounter
                 count={lastCommandCount}
-                min={meta.minCommands}
+                min={currentSolution.minCommands}
                 status={visibleStatus}
+                beatOptimal={beatOptimal}
               />
             )}
             {!animating && visibleStatus === 'win' && lastCommandCount === null && levelStars[currentLevelIndex] && (

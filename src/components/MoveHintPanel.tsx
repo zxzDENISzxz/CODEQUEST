@@ -108,7 +108,7 @@ export function MoveHintPanel({ autoPlay = false }: { autoPlay?: boolean }) {
       <div style={{
         background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
         padding: '8px 12px', fontFamily: 'monospace', fontSize: 15,
-        minHeight: 38, display: 'flex', alignItems: 'center',
+        height: 38, display: 'flex', alignItems: 'center', width: '100%', boxSizing: 'border-box', overflow: 'hidden',
       }}>
         <span style={{ color: '#34d399' }}>{typed}</span>
         <span style={{

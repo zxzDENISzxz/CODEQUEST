@@ -20,7 +20,7 @@ export interface GameState {
   grid: Cell[][]
   status?: 'idle' | 'win' | 'fail'
   direction: Direction
-  fuel: number
+  fuel?: number
 }
 
 export function runCommands(state: GameState, commands: Command[]): {
@@ -28,7 +28,7 @@ export function runCommands(state: GameState, commands: Command[]): {
   finalState: GameState
 } {
   const player = { ...state.player }
-  const dirState = { direction: state.direction ?? 'right' as Direction, fuel: state.fuel }
+  const dirState = { direction: state.direction ?? 'right' as Direction, fuel: state.fuel ?? 0 }
   const events: GameEvent[] = []
 
   try {

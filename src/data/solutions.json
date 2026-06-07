@@ -1,0 +1,50 @@
+[
+  {
+    "levelId": 1,
+    "minMoves": 2,
+    "minCommands": 2,
+    "solution": "move\nmove"
+  },
+  {
+    "levelId": 2,
+    "minMoves": 6,
+    "minCommands": 8,
+    "solution": "turn\nmove\nmove\nrepeat 2 {\n  repeat 3 {\n    turn\n  }\n  move\n  move\n}"
+  },
+  {
+    "levelId": 3,
+    "minMoves": 3,
+    "minCommands": 2,
+    "solution": "repeat 3 {\n  move\n}"
+  },
+  {
+    "levelId": 4,
+    "minMoves": 6,
+    "minCommands": 6,
+    "solution": "move\nmove\nrepeat 2 {\n  move\n  turn\n  move\n}"
+  },
+  {
+    "levelId": 5,
+    "minMoves": 8,
+    "minCommands": 9,
+    "solution": "repeat 2 {\n  move\n  move\n  turn\n}\nturn\nrepeat 2 {\n  turn\n  move\n  move\n}"
+  },
+  {
+    "levelId": 6,
+    "minMoves": 8,
+    "minCommands": 8,
+    "solution": "turn\nrepeat 2 {\n  move\n  move\n  repeat 3 {\n    turn\n  }\n  move\n  move\n}"
+  },
+  {
+    "levelId": 7,
+    "minMoves": 14,
+    "minCommands": 13,
+    "solution": "move\nturn\nrepeat 2 {\n  move\n  move\n  repeat 3 {\n    turn\n  }\n}\nrepeat 2 {\n  move\n  move\n  turn\n}\nrepeat 5 {\n  move\n}"
+  },
+  {
+    "levelId": 8,
+    "minMoves": 12,
+    "minCommands": 12,
+    "solution": "repeat 4 {\n  move\n}\nrepeat 2 {\n  move\n  turn\n  move\n  move\n}\nturn\nmove\nrepeat 3 {\n  turn\n}\nmove"
+  }
+]
