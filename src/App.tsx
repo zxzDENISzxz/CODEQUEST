@@ -87,13 +87,14 @@ export default function App() {
     }
   }, [visibleStatus, currentLevelIndex, animating])
 
-  // Инициализация и управление фоновой музыкой
+  // Инициализация фоновой музыки при монтировании, управление при изменении экрана
   useEffect(() => {
     initBackgroundMusic()
-    
-    if (screen === 'game') {
-      playBackgroundMusic()
-    } else {
+  }, [])
+
+  useEffect(() => {
+    // Если вышли из игры в меню — останавливаем
+    if (screen !== 'game') {
       stopBackgroundMusic()
     }
   }, [screen])
@@ -292,31 +293,34 @@ export default function App() {
     }
   }
 
-  if (screen === 'select') {
-    return (
-      <LevelSelect
-        levels={levels}
-        levelWins={levelWins}
-        levelStars={levelStars}
-        levelGenius={levelGenius}
-        onSelect={(index) => {
-          setCurrentLevelIndex(index)
-          setState(getLevelState(index))
-          setDisplayPos(levels[index].state.player)
-          setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[index].state.direction ?? 'right']))
-          setVisibleStatus(levelWins[index] ? 'win' : 'idle')
-          setCurrentFuel(getLevelSolution(levels[index].meta.id).minMoves)
-          setActiveCommandIndex(null)
-          setLastCommandCount(null)
-          setLineExecCounts({})
-          setFailedCommandIndex(null)
-          setBeatOptimal(levelGenius[index] ?? false)
-          setScreen('game')
-          if (levels[index].meta.briefing && !briefingsSeen[index]) { setBriefingInstant(false); setShowBriefing(true) }
-        }}
-      />
-    )
-  }
+    if (screen === 'select') {
+      return (
+        <LevelSelect
+          levels={levels}
+          levelWins={levelWins}
+          levelStars={levelStars}
+          levelGenius={levelGenius}
+          onSelect={(index) => {
+            // Включаем музыку здесь — в момент клика пользователя!
+            playBackgroundMusic() 
+
+            setCurrentLevelIndex(index)
+            setState(getLevelState(index))
+            setDisplayPos(levels[index].state.player)
+            setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[index].state.direction ?? 'right']))
+            setVisibleStatus(levelWins[index] ? 'win' : 'idle')
+            setCurrentFuel(getLevelSolution(levels[index].meta.id).minMoves)
+            setActiveCommandIndex(null)
+            setLastCommandCount(null)
+            setLineExecCounts({})
+            setFailedCommandIndex(null)
+            setBeatOptimal(levelGenius[index] ?? false)
+            setScreen('game')
+            if (levels[index].meta.briefing && !briefingsSeen[index]) { setBriefingInstant(false); setShowBriefing(true) }
+          }}
+        />
+      )
+    }
 
   return (
     <>
