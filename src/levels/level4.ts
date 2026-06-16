@@ -1,26 +1,28 @@
-import type { GameState } from '../core/GameEngine'
+import { parseGrid } from '../core/types'
+import type { LevelDef } from '../core/types'
+import { PlanetEmbra } from '../components/GoalPlanets'
 
-export const level4: GameState = {
-  player: { x: 0, y: 0 },
-  goal:   { x: 2, y: 2 },
-  status: 'idle',
-  steps:  [],
-  direction: 'right',
-  grid: [
-    ['empty', 'empty', 'empty', 'empty', 'empty'],
-    ['empty', 'wall',  'wall',  'empty', 'empty'],
-    ['empty', 'wall',  'empty', 'empty', 'empty'],
-    ['empty', 'wall',  'empty', 'wall',  'empty'],
-    ['empty', 'empty', 'empty', 'wall',  'empty' ],
-  ],
-}
-
-export const level4Meta = {
-  id: 4,
-  title: 'Лабиринт с циклами',
-  description: 'Используй repeat чтобы сократить код!',
-  hint: 'Комбинируй move и repeat\nrepeat N {\n  команды\n}',
-  allowedCommands: ['move', 'repeat', 'turn'],
-  maxCommands: 15,
-  minCommands: 5,
+export const level4: LevelDef = {
+  state: {
+    ...parseGrid([
+      ['player', 'empty', 'empty', 'empty'],
+      ['empty',  'wall',  'wall',  'empty'],
+      ['empty',  'wall',  'goal',  'empty'],
+      ['empty',  'empty', 'empty', 'wall' ],
+    ]),
+    direction: 'right',
+  },
+  meta: {
+    id: 4,
+    title: 'Разлом Кеола',
+    description: 'Плотный астероидный пояс. Эмбра где-то внутри.',
+    hint: `Маршрут неоднозначен. Комбинируй move, turn, repeat.`,
+    briefing: `Ого, какой лабиринт из обломков! Здесь одной командой не обойтись. Пришло время стать настоящим архитектором кода.\n\nКомпьютер (и наш корабль) выполняет команды строго сверху вниз, одну за другой. Это называется последовательностью.\n\nТы можешь смело комбинировать наши суперсилы: сначала пролететь вперед с помощью repeat, потом повернуться через turn, а потом снова лететь. Просчитай весь путь в голове, как шахматист, запиши его в свиток команд и нажимай «Запустить»!`,
+  },
+  visual: {
+    obstacleTheme: 'asteroid',
+    GoalPlanet: PlanetEmbra,
+    mapPosition: { x: 72, y: 15 },
+    mapColor: { color: '#eab308', glow: 'rgba(234,179,8,0.50)' },
+  },
 }

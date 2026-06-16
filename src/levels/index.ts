@@ -1,13 +1,29 @@
-import { level1, level1Meta } from './level1'
-import { level2, level2Meta } from './level2'
-import { level3, level3Meta } from './level3'
-import { level4, level4Meta } from './level4'
-import { level5, level5Meta } from './level5'
+import type { LevelDef } from '../core/types'
+import { level1 } from './level1'
+import { level2 } from './level2'
+import { level3 } from './level3'
+import { level4 } from './level4'
+import { level5 } from './level5'
+import { level6 } from './level6'
+import { level7 } from './level7'
+import { level8 } from './level8'
+import solutions from '../data/solutions.json'
 
-export const levels = [
-  { state: level1, meta: level1Meta },
-  { state: level2, meta: level2Meta },
-  { state: level3, meta: level3Meta },
-  { state: level4, meta: level4Meta },
-  { state: level5, meta: level5Meta },
-]
+export const levels: LevelDef[] = [level1, level2, level3, level4, level5, level6, level7, level8]
+
+export interface LevelSolution {
+  levelId:     number
+  minMoves:    number
+  minCommands: number
+  solution:    string
+}
+
+const solutionMap = new Map<number, LevelSolution>(
+  (solutions as LevelSolution[]).map(s => [s.levelId, s])
+)
+
+export function getLevelSolution(levelId: number): LevelSolution {
+  const s = solutionMap.get(levelId)
+  if (!s) throw new Error(`No solution for level ${levelId}`)
+  return s
+}

@@ -1,26 +1,67 @@
-import { useState, useRef } from 'react'
-import { GameGrid } from './components/GameGrid'
+import { useState, useRef, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { StarBackground } from './components/StarBackground'
+import { GameGrid, ShipSVG } from './components/GameGrid'
 import { CommandInput } from './components/CommandInput'
+import { BippMessage } from './components/BippMessage'
+import { FinalScreen } from './components/FinalScreen'
+import { BippBriefing } from './components/BippBriefing'
 import { LevelSelect } from './components/LevelSelect'
 import { CommandCounter, calcStars } from './components/CommandCounter'
 import { parseCommands } from './core/CommandParser'
 import { runCommands, countCommands } from './core/GameEngine'
-import { levels } from './levels/index'
+import { startThruster, stopThruster, playTurn, playWin, playFail, playClick, setMuted, initBackgroundMusic, playBackgroundMusic, stopBackgroundMusic } from './core/sounds'
+import { levels, getLevelSolution } from './levels/index'
 import { useGameStore } from './store/gameStore'
-import type { GameState, Position, Direction, GameEvent } from './core/GameEngine'
+import type { GameState, Position, GameEvent } from './core/GameEngine'
+
+const DIR_ANGLE: Record<string, number> = { right: 0, down: 90, left: 180, up: -90 }
+
+function BeatOptimalBanner() {
+  return (
+    <motion.div
+      initial={{ scale: 0.7, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 22 }}
+      className="flex flex-col items-center gap-1"
+    >
+      <motion.div
+        animate={{ rotate: [0, -8, 8, -8, 8, 0] }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="text-3xl font-bold whitespace-nowrap"
+        style={{ fontFamily: "'Orbitron', sans-serif", color: '#fbbf24' }}
+      >
+        🏆 Гениально!
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="text-sm text-yellow-300 font-semibold whitespace-nowrap"
+        style={{ fontFamily: "'Exo 2', sans-serif" }}
+      >
+        Ты превзошёл оптимальное решение БИПП!
+      </motion.div>
+    </motion.div>
+  )
+}
+function nearestAngle(current: number, target: number): number {
+  return current + (((target - current) % 360 + 540) % 360 - 180)
+}
 
 export default function App() {
   const [screen, setScreen] = useState<'select' | 'game'>('select')
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
-  const { levelWins, levelCodes, levelStars, setWin, setStars } = useGameStore()
+  const { levelWins, levelCodes, levelStars, levelGenius, briefingsSeen, setWin, setStars, setGenius, setBriefingSeen } = useGameStore()
+
+  const [currentFuel, setCurrentFuel] = useState<number>(getLevelSolution(levels[0].meta.id).minMoves)
 
   const [state, setState] = useState<GameState>({
     ...levels[0].state,
     status: 'idle',
-    steps: [],
   })
   const [displayPos, setDisplayPos] = useState<Position>(levels[0].state.player)
-  const [currentDirection, setCurrentDirection] = useState<Direction>('right')
+  const [currentRotation, setCurrentRotation] = useState(0)
   const [animating, setAnimating] = useState(false)
   const [visibleStatus, setVisibleStatus] = useState<'idle' | 'win' | 'fail'>('idle')
   const [teleporting, setTeleporting] = useState(false)
@@ -31,12 +72,38 @@ export default function App() {
   const launchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [failedCommandIndex, setFailedCommandIndex] = useState<number | null>(null)
   const [lineExecCounts, setLineExecCounts] = useState<Record<number, number>>({})
+  const [showFinalScreen, setShowFinalScreen] = useState(false)
+  const [showBriefing, setShowBriefing] = useState(false)
+  const [briefingInstant, setBriefingInstant] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [beatOptimal, setBeatOptimal] = useState(false)
+  const freshWinRef = useRef(false)
+
+  useEffect(() => {
+    if (visibleStatus === 'win' && currentLevelIndex === levels.length - 1 && !animating && freshWinRef.current) {
+      freshWinRef.current = false
+      const t = setTimeout(() => setShowFinalScreen(true), 1400)
+      return () => clearTimeout(t)
+    }
+  }, [visibleStatus, currentLevelIndex, animating])
+
+  // Инициализация фоновой музыки при монтировании, управление при изменении экрана
+  useEffect(() => {
+    initBackgroundMusic()
+  }, [])
+
+  useEffect(() => {
+    // Если вышли из игры в меню — останавливаем
+    if (screen !== 'game') {
+      stopBackgroundMusic()
+    }
+  }, [screen])
 
   function getLevelState(index: number): GameState {
     return {
       ...levels[index].state,
       status: levelWins[index] ? 'win' : 'idle',
-      steps: [],
+      fuel: getLevelSolution(levels[index].meta.id).minMoves,
     }
   }
 
@@ -49,6 +116,7 @@ export default function App() {
     animationRef.current = true
     setAnimating(true)
     setVisibleStatus('idle')
+    startThruster()
 
     let i = 0
     intervalRef.current = setInterval(() => {
@@ -58,19 +126,23 @@ export default function App() {
         setDisplayPos(event.position)
         setActiveCommandIndex(event.commandIndex)
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
+        setCurrentFuel(event.fuelRemaining)
       }
 
       if (event.type === 'turn') {
-        setCurrentDirection(event.direction)
+        playTurn()
+        setCurrentRotation(r => r + 90)
         setActiveCommandIndex(event.commandIndex)
         setLineExecCounts(prev => ({ ...prev, [event.commandIndex]: (prev[event.commandIndex] ?? 0) + 1 }))
       }
 
-      if (event.type === 'fail') {
+      if (event.type === 'fail' && event.commandIndex >= 0) {
         setFailedCommandIndex(event.commandIndex)
       }
 
       if (event.type === 'win' || event.type === 'fail') {
+        stopThruster()
+        event.type === 'win' ? playWin() : playFail()
         clearInterval(intervalRef.current!)
         intervalRef.current = null
         animationRef.current = false
@@ -82,6 +154,7 @@ export default function App() {
 
       i++
       if (i >= events.length) {
+        stopThruster()
         clearInterval(intervalRef.current!)
         intervalRef.current = null
         animationRef.current = false
@@ -94,7 +167,9 @@ export default function App() {
 
   const currentLevel = levels[currentLevelIndex]
   const meta = currentLevel.meta
+  const currentSolution = getLevelSolution(meta.id)
   const currentCode = levelCodes[currentLevelIndex] ?? ''
+  const gridWidth = state.grid[0].length * 64 + (state.grid[0].length - 1) * 4
 
   function handleCodeChange(code: string) {
     useGameStore.getState().setCode(currentLevelIndex, code)
@@ -103,7 +178,7 @@ export default function App() {
   function handleRun(code: string) {
     handleCodeChange(code)
     const parsed = parseCommands(code)
-    if (!parsed.ok) {
+    if (parsed.ok === false) {
       alert(`Ошибка в строке ${parsed.line}: ${parsed.error}`)
       return
     }
@@ -113,11 +188,12 @@ export default function App() {
 
     const launch = () => {
       setDisplayPos(startPos)
-      setCurrentDirection(levels[currentLevelIndex].state.direction)
+      setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[currentLevelIndex].state.direction ?? 'right']))
       setVisibleStatus('idle')
       setActiveCommandIndex(null)
       setFailedCommandIndex(null)
       setLineExecCounts({})
+      setCurrentFuel(currentSolution.minMoves)
 
       setTimeout(() => {
         setTeleporting(false)
@@ -125,7 +201,7 @@ export default function App() {
         const freshState: GameState = {
           ...levels[currentLevelIndex].state,
           status: 'idle',
-          steps: [],
+          fuel: currentSolution.minMoves,
         }
 
         const { events, finalState } = runCommands(freshState, parsed.commands)
@@ -135,7 +211,11 @@ export default function App() {
 
         if (finalState.status === 'win') {
           setWin(currentLevelIndex)
-          setStars(currentLevelIndex, calcStars(count, meta.minCommands))
+          setStars(currentLevelIndex, calcStars(count, currentSolution.minCommands))
+          const isGenius = count < currentSolution.minCommands
+          setBeatOptimal(isGenius)
+          if (isGenius) setGenius(currentLevelIndex)
+          if (currentLevelIndex === levels.length - 1) freshWinRef.current = true
         }
 
         playEvents(events, finalState)
@@ -159,17 +239,22 @@ export default function App() {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
+    stopThruster()
     animationRef.current = false
     setAnimating(false)
     setTeleporting(false)
     setVisibleStatus('idle')
     setActiveCommandIndex(null)
-    setCurrentDirection(levels[currentLevelIndex].state.direction)
+    setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[currentLevelIndex].state.direction ?? 'right']))
     setDisplayPos(levels[currentLevelIndex].state.player)
-    setState({ ...levels[currentLevelIndex].state, status: 'idle', steps: [] })
+    setState({ ...levels[currentLevelIndex].state, status: 'idle', fuel: currentSolution.minMoves })
+    setCurrentFuel(currentSolution.minMoves)
     setLastCommandCount(null)
     setFailedCommandIndex(null)
     setLineExecCounts({})
+    setShowFinalScreen(false)
+    setBeatOptimal(levelGenius[currentLevelIndex] ?? false)
+    freshWinRef.current = false
   }
 
   function handleNextLevel() {
@@ -179,11 +264,14 @@ export default function App() {
       setCurrentLevelIndex(nextIndex)
       setState(getLevelState(nextIndex))
       setDisplayPos(levels[nextIndex].state.player)
-      setCurrentDirection(levels[nextIndex].state.direction)
+      setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[nextIndex].state.direction ?? 'right']))
+      setCurrentFuel(getLevelSolution(levels[nextIndex].meta.id).minMoves)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
       setFailedCommandIndex(null)
+      setBeatOptimal(levelGenius[nextIndex] ?? false)
+      if (levels[nextIndex].meta.briefing && !briefingsSeen[nextIndex]) { setBriefingInstant(false); setShowBriefing(true) }
     }
   }
 
@@ -194,70 +282,101 @@ export default function App() {
       setCurrentLevelIndex(prevIndex)
       setState(getLevelState(prevIndex))
       setDisplayPos(levels[prevIndex].state.player)
-      setCurrentDirection(levels[prevIndex].state.direction)
+      setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[prevIndex].state.direction ?? 'right']))
+      setCurrentFuel(getLevelSolution(levels[prevIndex].meta.id).minMoves)
       setActiveCommandIndex(null)
       setLastCommandCount(null)
       setLineExecCounts({})
       setFailedCommandIndex(null)
+      setBeatOptimal(levelGenius[prevIndex] ?? false)
+      if (levels[prevIndex].meta.briefing && !briefingsSeen[prevIndex]) { setBriefingInstant(false); setShowBriefing(true) }
     }
   }
 
-  if (screen === 'select') {
-    return (
-      <LevelSelect
-        levels={levels}
-        levelWins={levelWins}
-        levelStars={levelStars}
-        onSelect={(index) => {
-          setCurrentLevelIndex(index)
-          setState(getLevelState(index))
-          setDisplayPos(levels[index].state.player)
-          setCurrentDirection(levels[index].state.direction)
-          setVisibleStatus(levelWins[index] ? 'win' : 'idle')
-          setActiveCommandIndex(null)
-          setLastCommandCount(null)
-          setLineExecCounts({})
-          setFailedCommandIndex(null)
-          setScreen('game')
-        }}
-      />
-    )
-  }
+    if (screen === 'select') {
+      return (
+        <LevelSelect
+          levels={levels}
+          levelWins={levelWins}
+          levelStars={levelStars}
+          levelGenius={levelGenius}
+          onSelect={(index) => {
+            // Включаем музыку здесь — в момент клика пользователя!
+            playBackgroundMusic() 
+
+            setCurrentLevelIndex(index)
+            setState(getLevelState(index))
+            setDisplayPos(levels[index].state.player)
+            setCurrentRotation(r => nearestAngle(r, DIR_ANGLE[levels[index].state.direction ?? 'right']))
+            setVisibleStatus(levelWins[index] ? 'win' : 'idle')
+            setCurrentFuel(getLevelSolution(levels[index].meta.id).minMoves)
+            setActiveCommandIndex(null)
+            setLastCommandCount(null)
+            setLineExecCounts({})
+            setFailedCommandIndex(null)
+            setBeatOptimal(levelGenius[index] ?? false)
+            setScreen('game')
+            if (levels[index].meta.briefing && !briefingsSeen[index]) { setBriefingInstant(false); setShowBriefing(true) }
+          }}
+        />
+      )
+    }
 
   return (
-    <div className="min-h-screen bg-indigo-950 text-white flex flex-col items-center gap-8 p-8 pt-12">
+    <>
+    <div className="relative min-h-screen text-white flex flex-col items-center gap-8 p-8 pt-12" style={{ background: '#05060f' }}>
+      <StarBackground />
 
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-yellow-400">CodeQuest 🚀</h1>
-        <p className="text-indigo-300 mt-1">Уровень {meta.id} — {meta.title}</p>
-        <p className="text-indigo-400 text-sm mt-1">{meta.description}</p>
+        <h1 className="text-4xl font-bold text-yellow-400 flex items-center justify-center gap-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          CodeQuest <ShipSVG animating={animating} />
+        </h1>
+        <p className="text-indigo-300 mt-1" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem', letterSpacing: '0.04em' }}>Сектор {meta.id} — {meta.title}</p>
+        <p className="text-indigo-400 text-sm mt-1" style={{ fontFamily: "'Exo 2', sans-serif" }}>{meta.description}</p>
       </div>
 
-      <div className="flex gap-12 items-start">
-        <div className="flex flex-col gap-4">
+      <div className="grid gap-12 items-start w-full max-w-4xl" style={{ gridTemplateColumns: '1fr auto' }}>
+        <div className="flex flex-col gap-4 items-center">
           <GameGrid
+            key={currentLevelIndex}
             grid={state.grid}
             player={displayPos}
             goal={state.goal}
             teleporting={teleporting}
-            direction={currentDirection}
+            rotation={currentRotation}
+            obstacleTheme={currentLevel.visual.obstacleTheme}
+            GoalPlanet={currentLevel.visual.GoalPlanet}
+            animating={animating}
           />
-          <div className="h-24 flex flex-col items-center justify-center gap-2">
-            {!animating && visibleStatus === 'win' && (
-              <div className="text-center text-2xl font-bold text-green-400">
-                🎉 Победа!
+          <div className="flex items-center gap-2 text-sm font-mono">
+            <span>⛽</span>
+            <span className="text-indigo-300">Топливо:</span>
+            <span className={`font-bold ${currentFuel <= 2 ? 'text-red-400' : 'text-white'}`}>
+              {currentFuel}
+            </span>
+            <span className="text-indigo-500">/ {currentSolution.minMoves}</span>
+          </div>
+
+          <div className="min-h-[96px] flex flex-col items-center justify-center gap-2" style={{ width: gridWidth }}>
+            {!animating && visibleStatus === 'win' && !beatOptimal && (
+              <div className="whitespace-nowrap text-center text-2xl font-bold text-green-400">
+                🪐 Планета достигнута!
               </div>
+            )}
+            {!animating && visibleStatus === 'win' && beatOptimal && (
+              <BeatOptimalBanner />
             )}
             {!animating && visibleStatus === 'fail' && (
-              <div className="text-center text-2xl font-bold text-red-400">
-                💥 Попробуй ещё раз!
+              <div className="whitespace-nowrap text-center text-2xl font-bold text-red-400">
+                💥 Навигационный сбой. Попробуй снова.
               </div>
             )}
-            {!animating && lastCommandCount !== null && visibleStatus !== 'idle' && (
+            {!animating && lastCommandCount !== null && visibleStatus === 'win' && (
               <CommandCounter
                 count={lastCommandCount}
-                min={meta.minCommands}
+                min={currentSolution.minCommands}
                 status={visibleStatus}
+                beatOptimal={beatOptimal}
               />
             )}
             {!animating && visibleStatus === 'win' && lastCommandCount === null && levelStars[currentLevelIndex] && (
@@ -269,10 +388,19 @@ export default function App() {
         </div>
 
         <div className="flex flex-col gap-3 w-80">
-          <div className="flex gap-2 text-indigo-300 text-sm">
-            <span className="flex-shrink-0">💡</span>
-            <div className="whitespace-pre-wrap">{meta.hint}</div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => { playClick(); const next = !isMuted; setMuted(next); setIsMuted(next) }}
+              className="text-2xl opacity-40 hover:opacity-90 transition-opacity cursor-pointer"
+              title={isMuted ? 'Включить звук' : 'Выключить звук'}
+            >
+              {isMuted ? '🔇' : '🔊'}
+            </button>
           </div>
+          <BippMessage
+            hint={meta.hint}
+            onOpenBriefing={meta.briefing ? () => { setBriefingInstant(true); setShowBriefing(true) } : undefined}
+          />
           <CommandInput
             onRun={handleRun}
             disabled={state.status === 'win'}
@@ -283,7 +411,7 @@ export default function App() {
             lineExecCounts={lineExecCounts}
           />
           <button
-            onClick={handleReset}
+            onClick={() => { playClick(); handleReset() }}
             className="py-2 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
           >
             🔄 Сбросить
@@ -291,14 +419,14 @@ export default function App() {
           <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-indigo-700">
             <div className="flex gap-2">
               <button
-                onClick={handlePreviousLevel}
+                onClick={() => { playClick(); handlePreviousLevel() }}
                 disabled={currentLevelIndex === 0}
                 className="flex-1 py-2 rounded-lg bg-indigo-700 text-white hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 ← Назад
               </button>
               <button
-                onClick={handleNextLevel}
+                onClick={() => { playClick(); handleNextLevel() }}
                 disabled={currentLevelIndex === levels.length - 1 || visibleStatus !== 'win' || animating}
                 className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -306,14 +434,29 @@ export default function App() {
               </button>
             </div>
             <button
-              onClick={() => setScreen('select')}
+              onClick={() => { playClick(); setScreen('select') }}
               className="w-full py-2 rounded-lg bg-indigo-900 hover:bg-indigo-800 text-indigo-300 hover:text-white text-sm transition-colors cursor-pointer border border-indigo-700"
             >
-              ← На карту уровней
+              ← На карту секторов
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    {showFinalScreen && (
+      <FinalScreen onContinue={() => { setShowFinalScreen(false); setScreen('select') }} />
+    )}
+    {showBriefing && meta.briefing && (
+      <BippBriefing
+        levelId={meta.id}
+        title={meta.title}
+        text={meta.briefing}
+        instant={briefingInstant}
+        HintPanel={currentLevel.HintPanel}
+        onClose={() => { setBriefingSeen(currentLevelIndex); setShowBriefing(false) }}
+      />
+    )}
+    </>
   )
 }

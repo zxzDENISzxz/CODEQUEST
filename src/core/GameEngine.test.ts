@@ -6,8 +6,8 @@ const state: GameState = {
   player: { x: 0, y: 0 },
   goal:   { x: 2, y: 0 },
   status: 'idle',
-  steps: [],
   direction: 'right',
+  fuel: 10,
   grid: [
     ['empty', 'empty', 'goal'],
     ['empty', 'empty', 'empty'],
@@ -19,4 +19,4 @@ if (!parsed.ok) throw new Error(parsed.error)
 
 const result = runCommands(state, parsed.commands)
 console.log('Статус:', result.finalState.status)   // должно быть "win"
-console.log('Шаги:', result.finalState.steps)      // путь персонажа
+console.log('Позиция:', result.finalState.player)  // финальная позиция

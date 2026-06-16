@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
+import { playClick } from '../core/sounds'
 
 interface Props {
   onRun: (code: string) => void
@@ -81,9 +82,25 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
           ref={textareaRef}
           value={code}
           onChange={e => onCodeChange(e.target.value)}
+          onPaste={e => {
+            const raw = e.clipboardData.getData('text')
+            if (raw.includes('\\n')) {
+              e.preventDefault()
+              const normalized = raw.replace(/\\n/g, '\n')
+              const ta = e.currentTarget
+              const start = ta.selectionStart ?? 0
+              const end   = ta.selectionEnd   ?? 0
+              const next  = code.slice(0, start) + normalized + code.slice(end)
+              onCodeChange(next)
+              requestAnimationFrame(() => {
+                const pos = start + normalized.length
+                ta.setSelectionRange(pos, pos)
+              })
+            }
+          }}
           onScroll={e => setScrollTop((e.target as HTMLTextAreaElement).scrollTop)}
           disabled={disabled}
-          placeholder={'move\nturn\nrepeat 4 {\n  move\n}'}
+          placeholder="введи команды..."
           className="
             absolute inset-0 w-full h-full p-3 font-mono text-sm
             bg-transparent text-white leading-6
@@ -95,7 +112,7 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
       </div>
 
       <button
-        onClick={() => onRun(code)}
+        onClick={() => { playClick(); onRun(code) }}
         disabled={disabled}
         className="
           py-3 rounded-lg font-bold text-lg
@@ -107,7 +124,7 @@ export function CommandInput({ onRun, disabled, code, onCodeChange, activeComman
         ▶ Запустить
       </button>
       <button
-        onClick={() => onCodeChange('')}
+        onClick={() => { playClick(); onCodeChange('') }}
         className="py-2 rounded-lg text-indigo-400 hover:text-white transition-colors cursor-pointer"
       >
         Очистить

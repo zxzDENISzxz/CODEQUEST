@@ -9,7 +9,7 @@ export type Cell = 'empty' | 'wall' | 'goal'
 export type Direction = 'up' | 'down' | 'left' | 'right'
 
 export type GameEvent =
-  | { type: 'move'; position: Position; commandIndex: number }
+  | { type: 'move'; position: Position; commandIndex: number; fuelRemaining: number }
   | { type: 'turn'; direction: Direction; commandIndex: number }
   | { type: 'fail'; commandIndex: number }
   | { type: 'win'; commandIndex: number }
@@ -18,9 +18,9 @@ export interface GameState {
   player: Position
   goal: Position
   grid: Cell[][]
-  status: 'idle' | 'win' | 'fail'
-  steps: Position[]
+  status?: 'idle' | 'win' | 'fail'
   direction: Direction
+  fuel?: number
 }
 
 export function runCommands(state: GameState, commands: Command[]): {
@@ -28,7 +28,7 @@ export function runCommands(state: GameState, commands: Command[]): {
   finalState: GameState
 } {
   const player = { ...state.player }
-  const dirState = { direction: state.direction ?? 'right' as Direction }
+  const dirState = { direction: state.direction ?? 'right' as Direction, fuel: state.fuel ?? 0 }
   const events: GameEvent[] = []
 
   try {
@@ -37,9 +37,10 @@ export function runCommands(state: GameState, commands: Command[]): {
     const finalState: GameState = {
       ...state,
       player,
-      steps: events.filter(e => e.type === 'move').map(e => (e as { position: Position }).position),
+
       status: 'fail',
       direction: dirState.direction,
+      fuel: dirState.fuel,
     }
     return { events, finalState }
   }
@@ -50,9 +51,9 @@ export function runCommands(state: GameState, commands: Command[]): {
   const finalState: GameState = {
     ...state,
     player,
-    steps: events.filter(e => e.type === 'move').map(e => (e as { position: Position }).position),
     status: won ? 'win' : 'fail',
     direction: dirState.direction,
+    fuel: dirState.fuel,
   }
 
   return { events, finalState }
@@ -62,7 +63,7 @@ function executeCommands(
   commands: Command[],
   player: Position,
   grid: Cell[][],
-  dirState: { direction: Direction },
+  dirState: { direction: Direction; fuel: number },
   events: GameEvent[],
 ): void {
   const directions: Direction[] = ['right', 'down', 'left', 'up']
@@ -75,14 +76,19 @@ function executeCommands(
     }
 
     if (cmd.type === 'move') {
+      if (dirState.fuel <= 0) {
+        events.push({ type: 'fail', commandIndex: cmd.lineIndex })
+        throw { commandIndex: cmd.lineIndex }
+      }
       const next = moveOne(player, dirState.direction)
       if (!isValid(next, grid)) {
         events.push({ type: 'fail', commandIndex: cmd.lineIndex })
         throw { commandIndex: cmd.lineIndex }
       }
+      dirState.fuel--
       player.x = next.x
       player.y = next.y
-      events.push({ type: 'move', position: { ...player }, commandIndex: cmd.lineIndex })
+      events.push({ type: 'move', position: { ...player }, commandIndex: cmd.lineIndex, fuelRemaining: dirState.fuel })
     }
 
     if (cmd.type === 'repeat') {
