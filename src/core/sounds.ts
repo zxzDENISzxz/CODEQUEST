@@ -279,7 +279,8 @@ const volume = 0.08
 export function initBackgroundMusic(): void {
   if (bgmAudio) return
   
-  bgmAudio = new Audio('/sound/background_music.mp3')
+  // Добавляем базовый URL проекта для корректного деплоя
+  bgmAudio = new Audio(`${import.meta.env.BASE_URL}sound/background_music.mp3`)
   bgmAudio.loop = true
   bgmAudio.volume = volume // Тихо чтобы не перекрывать звуки игры
 }
