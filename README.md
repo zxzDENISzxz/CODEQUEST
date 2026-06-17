@@ -2,6 +2,8 @@
 
 Образовательная игра-головоломка: пиши команды для навигационной системы корабля и веди пилота Зикса через 8 космических секторов домой.
 
+**[Играть онлайн →](https://zxzdeniszxz.github.io/CODEQUEST/)**
+
 ## Стек
 
 - **React 19** + **TypeScript**
@@ -24,6 +26,12 @@ npm run build
 npm run preview
 ```
 
+Деплой на GitHub Pages:
+
+```bash
+npm run deploy
+```
+
 ## Как играть
 
 Вводи команды в текстовое поле и нажимай **Запустить**. Корабль выполняет их по очереди. Цель — добраться до планеты, не потратив всё топливо и не врезавшись в препятствие.
@@ -34,7 +42,14 @@ npm run preview
 | `turn` | поворот на 90° по часовой стрелке |
 | `repeat N { }` | повторить N раз команды в скобках |
 
-**Звёзды** начисляются за эффективность: чем меньше команд — тем больше звёзд. Порог для 3 звёзд задаётся полем `minCommands` в файле уровня.
+**Звёзды** начисляются за эффективность: чем меньше команд — тем больше звёзд.
+
+| Результат | Условие |
+|---|---|
+| ⭐⭐⭐ 3 звезды | команд ≤ `minCommands` |
+| ⭐⭐ 2 звезды | команд ≤ `minCommands × 1.5` |
+| ⭐ 1 звезда | любое прохождение |
+| 🧠 Гений | команд меньше, чем в оптимальном решении игры |
 
 ## Структура проекта
 
@@ -44,7 +59,7 @@ src/
 │   ├── GameEngine.ts       # игровой движок: выполнение команд, события
 │   ├── CommandParser.ts    # парсер текста в команды
 │   ├── sounds.ts           # синтез звуков через Web Audio API (без файлов)
-│   └── types.ts            # общие типы (LevelDef, LevelMeta, LevelVisual)
+│   └── types.ts            # общие типы (LevelDef, LevelMeta, LevelVisual) + parseGrid
 │
 ├── levels/
 │   ├── _template.ts        # шаблон для нового уровня (с комментариями)
@@ -75,6 +90,9 @@ src/
 ├── store/
 │   └── gameStore.ts         # Zustand: победы, коды, звёзды, просмотренные брифинги
 │
+├── data/
+│   └── solutions.json       # оптимальные решения для всех уровней (minMoves, minCommands)
+│
 └── App.tsx                  # корневой компонент, игровой цикл
 ```
 
@@ -90,35 +108,53 @@ import { level9 } from './level9'
 export const levels: LevelDef[] = [..., level9]
 ```
 
+4. Запусти `npm run solve` — скрипт пересчитает оптимальные решения и обновит `solutions.json` (от него берётся лимит топлива)
+
 Всё остальное (карта, навигация, звёзды) подхватится автоматически.
 
 ### Структура уровня
 
 ```ts
-{
+import { parseGrid } from '../core/types'
+import { PlanetPixo } from '../components/GoalPlanets'
+import { MoveHintPanel } from '../components/MoveHintPanel' // только для обучающих уровней
+
+export const level9: LevelDef = {
   state: {
-    player: { x, y }       // стартовая позиция корабля
-    goal:   { x, y }       // позиция планеты-цели
-    direction: 'right'     // начальное направление
-    fuel: 14               // лимит топлива (каждый move = -1)
-    grid: Cell[][]         // 'empty' | 'wall'
+    // parseGrid принимает «сырую» сетку с маркерами 'player' и 'goal' прямо в клетках.
+    // Функция извлекает их позиции и возвращает { player, goal, grid }.
+    ...parseGrid([
+      ['player', 'wall',  'goal'  ],
+      ['empty',  'wall',  'empty' ],
+      ['empty',  'empty', 'empty' ],
+    ]),
+    // Начальное направление: 'right' | 'left' | 'up' | 'down'
+    direction: 'right',
+    // fuel здесь не указывается — App.tsx берёт его из solutions.json (поле minMoves)
   },
   meta: {
-    id: 9
-    title: '...'           // название сектора
-    description: '...'    // лоровый текст для тултипа на карте
-    hint: '...'            // подсказка от БИПП в игре
-    briefing: '...'       // необязательно: текст брифинга (открывается при первом входе)
-    minCommands: 7         // порог для 3 звёзд
+    id: 9,
+    title: 'Название сектора',
+    description: 'Описание ситуации (тултип на карте).',
+    hint: 'Подсказка от БИПП в игре.\nВторая строка.',
+    briefing: 'Текст брифинга при первом входе.',  // необязательно
+    minCommands: 7,  // порог для 3 звёзд; необязательно (без него звёзды не считаются)
   },
   visual: {
-    obstacleTheme:         // 'nebula' | 'asteroid' | 'debris' | 'ice'
-    GoalPlanet:            // компонент из GoalPlanets.tsx
-    mapPosition: { x, y } // позиция ноды на карте (0–100%)
-    mapColor: { color, glow }
+    obstacleTheme: 'asteroid',            // 'nebula' | 'asteroid' | 'debris' | 'ice'
+    GoalPlanet: PlanetPixo,               // компонент из GoalPlanets.tsx
+    mapPosition: { x: 60, y: 50 },       // позиция ноды на карте (0–100%)
+    mapColor: { color: '#a78bfa', glow: 'rgba(167,139,250,0.55)' },
   },
-  HintPanel?: ComponentType<{ autoPlay?: boolean }>  // необязательно, встраивается в брифинг
+  HintPanel: MoveHintPanel,  // необязательно: панель-подсказка для обучающих уровней
 }
+```
+
+## Утилиты разработки
+
+```bash
+npm run solve   # пересчитать оптимальные решения → src/data/solutions.json
+npm run lint    # проверить стиль кода
 ```
 
 ## Звуковая система
